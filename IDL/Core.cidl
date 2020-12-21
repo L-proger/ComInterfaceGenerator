@@ -1,0 +1,21 @@
+import test.idl
+import test.idl
+
+
+enum NodeStatus : int8 {
+    Idle = 0x7,
+    TaskLaunched = 9
+}
+
+struct Vector3{
+    float a;
+    float b;
+}
+
+//hello comment
+[Guid("5A651458-7E3C-4FE1-860D-8F75D15FBF60")]
+interface INetwork : IUnknown {
+    void update([const][in]void* a, float b);
+    void update2([const]int8 a, float b);
+}
+
