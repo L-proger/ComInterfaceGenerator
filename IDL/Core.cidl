@@ -13,9 +13,10 @@ struct Vector3{
 }
 
 //hello comment
-[Guid("5A651458-7E3C-4FE1-860D-8F75D15FBF60")]
+[Guid("5A651458-7E3C-4FE1-860D-8F75D15FBF60", -1.0e-3f)]
+[OMG]
 interface INetwork : IUnknown {
-    void update([const][in]void* a, float b);
+    void update([const][in]int& a, [in]float b);
     void update2([const]int8 a, float b);
 }
 

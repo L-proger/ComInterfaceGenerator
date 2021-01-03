@@ -5,12 +5,16 @@ module
     | importExprList? (interfaceDefinition | structDefinition | enumDefinition)* EOF
     ;
 
-attribute_guid
-    : LEFT_SQUARE_BRACKET 'Guid' LEFT_BRACKET '"'  guid  '"'  RIGHT_BRACKET RIGHT_SQUARE_BRACKET
+attribute
+    : LEFT_SQUARE_BRACKET identifier (LEFT_BRACKET argument_list RIGHT_BRACKET)? RIGHT_SQUARE_BRACKET
+    ;
+
+attribute_list
+    : attribute ( attribute)*
     ;
 
 interfaceDefinition 
-    : attribute_guid ID_INTERFACE identifier interfaceInheritanceList? LCURLY method+ RCURLY
+    : attribute_list ID_INTERFACE identifier interfaceInheritanceList? LCURLY method+ RCURLY
     ;
 
 
@@ -26,43 +30,55 @@ enumDefinition
     : ID_ENUM identifier (COLON integer_primitive)? LCURLY enumField (',' enumField)* RCURLY
     ;
 
-type_name: primitive | identifier;
+type_name
+    : primitive | identifier
+    ;
+
+reference_type_name
+    : type_name '&'
+    ;
+
 method_name: identifier;
 
-fragment GUIDH4
-    : HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+expression
+    : STRING_LITERAL
+    | numeric_literal
     ;
 
-ID_GUID
-    : (GUIDH4 GUIDH4 '-' GUIDH4 '-' GUIDH4 '-' GUIDH4 '-' GUIDH4 GUIDH4 GUIDH4)
+unary_expression
+    : expression
+    | MINUS unary_expression
+    | PLUS unary_expression
     ;
 
-guid
-    : ID_GUID
+MINUS
+    : '-'
     ;
 
-
-attribute_ref
-    : LEFT_SQUARE_BRACKET (ID_IN | ID_OUT | ID_INOUT) RIGHT_SQUARE_BRACKET
+PLUS
+    : '+'
     ;
 
-attribute_const
-    : LEFT_SQUARE_BRACKET (ID_CONST) RIGHT_SQUARE_BRACKET
+argument
+    : expression
+    | unary_expression
     ;
 
-
-
-method_argument
-    : attribute_const? type_name identifier
-    | attribute_const? attribute_ref? type_name '*' identifier
+argument_list
+    : argument (',' argument)*
     ;
 
-method_argument_list
-    : method_argument (',' method_argument)*
+method_parameter
+    : attribute_list? type_name identifier
+    | attribute_list? reference_type_name identifier
+    ;
+
+method_parameter_list
+    : method_parameter (',' method_parameter)*
     ;
 
 method
-    : type_name method_name LEFT_BRACKET method_argument_list? RIGHT_BRACKET SEMICOLON
+    : type_name method_name LEFT_BRACKET method_parameter_list? RIGHT_BRACKET SEMICOLON
     ;
 
 enumField 
@@ -91,12 +107,13 @@ LINE_COMMENT
    ;
 
 numeric_literal
-    :INTEGER_LITERAL
-    |HEX_LITERAL
+    : INTEGER_LITERAL
+    | HEX_LITERAL
+    | FLOAT_LITERAL
     ;
 
 INTEGER_LITERAL
-   : ( '0' .. '9')+
+   : ('0' .. '9')+
    ;
 
 HEX_LITERAL
@@ -158,22 +175,6 @@ ID_IMPORT
     : 'import'
     ;
 
-ID_CONST
-   : 'const'
-   ;
-
-ID_IN
-   : 'in'
-   ;
-
-ID_OUT
-   : 'out'
-   ;
-
-ID_INOUT
-   : 'inout'
-   ;
-
 identifier
     : ID
     ;
@@ -181,6 +182,40 @@ identifier
 LEFT_SQUARE_BRACKET
    : '['
    ;
+
+FLOAT_LITERAL
+     :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT? FLOAT_SUFFIX?
+     |   '.' ('0'..'9')+ EXPONENT? FLOAT_SUFFIX?
+     |   ('0'..'9')+ EXPONENT FLOAT_SUFFIX?
+     ;
+
+fragment FLOAT_SUFFIX
+    : ('f' | 'F')
+    ;
+
+fragment EXPONENT 
+    : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
+
+fragment ESC_SEQ
+    :   '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\')
+    |   UNICODE_ESC
+    |   OCTAL_ESC
+    ;
+
+fragment OCTAL_ESC
+    :   '\\' ('0'..'3') ('0'..'7') ('0'..'7')
+    |   '\\' ('0'..'7') ('0'..'7')
+    |   '\\' ('0'..'7')
+    ;
+fragment UNICODE_ESC
+    :   '\\' 'u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+    ;
+
+
+STRING_LITERAL
+    :  '"' ( ESC_SEQ | ~('\\'|'"') )* '"'
+    ;
+
 
 
 RIGHT_SQUARE_BRACKET
