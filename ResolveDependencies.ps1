@@ -1,5 +1,3 @@
-
-
 $zipFileLocalPath = "$PSScriptRoot/antlr4-cpp-runtime-4.9.1-source.zip"
 
 if(-not [System.IO.File]::Exists($zipFileLocalPath)){
@@ -7,18 +5,34 @@ if(-not [System.IO.File]::Exists($zipFileLocalPath)){
 }
 
 
-$rootSrcDirectory = "$PSScriptRoot/antlr_src"
+function CopyDirectory() {
+    param (
+        [string]$sourceDir,
+        [string]$targetDir,
+        [string]$include
+    )
+
+    Get-ChildItem $sourceDir -Recurse -Include "$include" | % {
+        $dest = $targetDir + $_.FullName.SubString($sourceDir.Length)
+        #Write-Host "FROM: $($_.FullName) TO: $dest"
+        $destDir = Split-Path $dest
+        If(!(Test-Path $destDir)) { New-Item $destDir -Type Directory }
+        Copy-Item -Path $_.FullName -Destination $dest -Force -Recurse -Container
+    }
+}
+
+
+$rootSrcDirectory = "$PSScriptRoot\antlr_src"
 Remove-Item $rootSrcDirectory -Recurse -ErrorAction Ignore
 Expand-Archive -LiteralPath $zipFileLocalPath -DestinationPath "$rootSrcDirectory"
 
-$rootDeployDirectory = "$PSScriptRoot/antlr"
+$rootDeployDirectory = "$PSScriptRoot\antlr"
 Remove-Item $rootDeployDirectory -Recurse -ErrorAction Ignore
 New-Item $rootDeployDirectory -Type Directory
 
 Write-Host "Copying header files ..."
 
-Get-ChildItem "$rootSrcDirectory/runtime/src/" | Copy-Item -Destination "$rootDeployDirectory/runtime/" -Recurse -Force -filter *.h
-
+CopyDirectory -sourceDir "$rootSrcDirectory\runtime\src" -targetDir "$rootDeployDirectory\runtime" -include "*.h"
 
 $vsEdition = "Community"
 
@@ -43,8 +57,8 @@ msbuild antlr4cpp-vs2019.vcxproj /p:configuration="Release Static" /p:platform=x
 msbuild antlr4cpp-vs2019.vcxproj /p:configuration="Debug Static" /p:platform=x64
 popd
 
-Get-ChildItem "$rootSrcDirectory/runtime/bin/" | Copy-Item -Destination "$rootDeployDirectory/lib/" -Recurse -Force -filter *.dll
-Get-ChildItem "$rootSrcDirectory/runtime/bin/" | Copy-Item -Destination "$rootDeployDirectory/lib/" -Recurse -Force -filter *.lib
+CopyDirectory -sourceDir "$rootSrcDirectory\runtime\bin" -targetDir "$rootDeployDirectory\lib" -include "*.dll"
+CopyDirectory -sourceDir "$rootSrcDirectory\runtime\bin" -targetDir "$rootDeployDirectory\lib" -include "*.lib"
 
 Remove-Item $rootSrcDirectory -Recurse -ErrorAction Ignore
 Remove-Item $zipFileLocalPath -Recurse -ErrorAction Ignore
