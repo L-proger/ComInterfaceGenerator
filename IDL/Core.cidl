@@ -1,10 +1,13 @@
-import test.idl
-import test.idl
-
+import "test\t.cidl"
+import "test2.cidl"
 
 enum NodeStatus : int8 {
-    Idle = 0x7,
-    TaskLaunched = 9
+    A0,
+     A1,
+    Idle = -0xf,
+    TaskLaunched = 0x9,
+    A2,
+    A3
 }
 
 struct Vector3{
@@ -13,10 +16,10 @@ struct Vector3{
 }
 
 //hello comment
-[Guid("5A651458-7E3C-4FE1-860D-8F75D15FBF60", -1.0e-3f)]
+[Guid("5A651458-7E3C-4FE1-860D-8F75D15FBF60", 1.0e-3f)]
 [OMG]
 interface INetwork : IUnknown {
-    void update([const][in]int& a, [in]float b);
+    void update([const][in]int32& a, [in]float b);
     void update2([const]int8 a, float b);
 }
 

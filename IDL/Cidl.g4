@@ -17,9 +17,12 @@ interfaceDefinition
     : attribute_list ID_INTERFACE identifier interfaceInheritanceList? LCURLY method+ RCURLY
     ;
 
-
 structField 
-    : (primitive | identifier) identifier SEMICOLON
+    : structFieldType identifier SEMICOLON
+    ;
+
+structFieldType 
+    : (primitive | identifier) 
     ;
 
 structDefinition 
@@ -82,15 +85,20 @@ method
     ;
 
 enumField 
-    : identifier ('=' numeric_literal)?
+    : identifier ('=' enum_field_value)?
     ;
 
 interfaceInheritanceList
     : (COLON identifier)
     ;
 
+import_file_path
+    : STRING_LITERAL
+    ;
+
+
 importExpr
-    : ID_IMPORT (identifier'.idl')
+    : ID_IMPORT import_file_path
     ;
 
 importExprList
@@ -109,12 +117,17 @@ LINE_COMMENT
 numeric_literal
     : INTEGER_LITERAL
     | HEX_LITERAL
-    | FLOAT_LITERAL
+    | float_literal
+    ;
+
+enum_field_value 
+    : MINUS? (INTEGER_LITERAL | HEX_LITERAL)
     ;
 
 INTEGER_LITERAL
    : ('0' .. '9')+
    ;
+
 
 HEX_LITERAL
    : '0' ('x' | 'X') HEX_DIGIT+
@@ -183,13 +196,17 @@ LEFT_SQUARE_BRACKET
    : '['
    ;
 
-FLOAT_LITERAL
-     :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT? FLOAT_SUFFIX?
+float_literal
+    : FLOAT FLOAT_SUFFIX?
+    ;
+
+FLOAT
+     :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT? 
      |   '.' ('0'..'9')+ EXPONENT? FLOAT_SUFFIX?
      |   ('0'..'9')+ EXPONENT FLOAT_SUFFIX?
      ;
 
-fragment FLOAT_SUFFIX
+FLOAT_SUFFIX
     : ('f' | 'F')
     ;
 
@@ -213,7 +230,7 @@ fragment UNICODE_ESC
 
 
 STRING_LITERAL
-    :  '"' ( ESC_SEQ | ~('\\'|'"') )* '"'
+    :  '"' ( ESC_SEQ | ~('\\'|'"') )* '"' //{this->setText(this->getText().substr(1, this->getText().length()-2));}
     ;
 
 
