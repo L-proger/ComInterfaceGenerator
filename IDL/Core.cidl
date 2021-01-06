@@ -1,4 +1,4 @@
-import "test\t.cidl"
+import "test.cidl"
 import "test2.cidl"
 
 enum NodeStatus : int8 {
@@ -21,5 +21,10 @@ struct Vector3{
 interface INetwork : IUnknown {
     void update([const][in]int32& a, [in]float b);
     void update2([const]int8 a, float b);
+}
+
+[Guid("6B751459-0E3C-4FE1-860D-8F75D15FBF66", 1.0e-3f)]
+interface INetwork2 : INetwork {
+    void update3();
 }
 
