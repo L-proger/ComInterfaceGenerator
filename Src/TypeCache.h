@@ -5,10 +5,13 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <Type/Module.h>
 
 class TypeCache {
 public:
     static void init();
+
+    static std::shared_ptr<Module> parseModule(const std::string& path);
 
     static std::shared_ptr<Type> findType(std::string name);
 
@@ -24,6 +27,11 @@ public:
             return newType;
         }
     }
+
+    static std::shared_ptr<Module> findModule(std::string name);
 private:
     static std::vector<std::shared_ptr<Type>> types;
+    static std::vector<std::shared_ptr<Module>> modules;
+
+    static std::shared_ptr<Module> resolveImport(const std::string& path);
 };

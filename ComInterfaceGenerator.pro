@@ -31,11 +31,13 @@ HEADERS += \
     Src/Parser/InterfaceParser.h \
     Src/Parser/MethodParser.h \
     Src/Parser/ModuleParser.h \
+    Src/Parser/StringResolve.h \
     Src/Parser/StructParser.h \
     Src/Type/AttributeType.h \
     Src/Type/EnumType.h \
     Src/Type/InterfaceType.h \
     Src/Type/Method.h \
+    Src/Type/Module.h \
     Src/Type/StructType.h \
     Src/Type/Type.h \
     Src/TypeCache.h

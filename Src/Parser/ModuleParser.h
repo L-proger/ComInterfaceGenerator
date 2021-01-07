@@ -5,13 +5,19 @@
 #include "EnumParser.h"
 #include "StructParser.h"
 #include "InterfaceParser.h"
+#include <functional>
+#include <Type/Module.h>
 
 class ModuleParser : public CidlBaseListener {
 public:
-    std::vector<std::string> imports;
+    std::vector<std::shared_ptr<Module>> imports;
     std::vector<std::shared_ptr<EnumType>> enums;
     std::vector<std::shared_ptr<StructType>> structs;
     std::vector<std::shared_ptr<InterfaceType>> interfaces;
+
+    ModuleParser(std::function<std::shared_ptr<Module>(std::string)> importHandler) : _importHandler(importHandler){
+
+    }
 
     virtual void enterModule(CidlParser::ModuleContext * ctx) override {
         //Get module imports
@@ -19,7 +25,7 @@ public:
         if(importList != nullptr){
             auto expr = importList->importExpr();
             for(auto & import : expr){
-                imports.push_back(import->import_file_path()->getText());
+                imports.push_back(_importHandler(import->import_file_path()->getText()));
             }
         }
 
@@ -44,4 +50,6 @@ public:
             interfaces.push_back(parser.result);
         }
     }
+private:
+    std::function<std::shared_ptr<Module>(std::string)> _importHandler;
 };
