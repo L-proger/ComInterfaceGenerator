@@ -7,5 +7,9 @@ int main() {
     auto apiPath = srcPath / "IDL";
     auto testFilePath = apiPath / "Network2.cidl";
     auto module = TypeCache::parseModule(testFilePath.string());
+
+
+    auto allTypes = TypeCache::getTypes();
+    auto allModules = TypeCache::getModules();
     return 0;
 }

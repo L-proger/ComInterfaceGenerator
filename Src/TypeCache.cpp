@@ -14,14 +14,18 @@
 #include "tree/ParseTree.h"
 #include "tree/ErrorNode.h"
 #include <Parser/ModuleParser.h>
-#include <stack>
+
 #include <filesystem>
 #include <Parser/StringResolve.h>
 
+const char* TypeCache::primitiveModuleName(){
+    return "$primitive";
+}
+
+
 std::vector<std::shared_ptr<Type>> TypeCache::types;
 std::vector<std::shared_ptr<Module>> TypeCache::modules;
-
-std::stack<std::shared_ptr<Module>> moduleParseStack;
+std::stack<std::shared_ptr<Module>> TypeCache::moduleParseStack;
 
 std::shared_ptr<Module> TypeCache::findModule(std::string name) {
     auto it = std::find_if(modules.begin(), modules.end(), [name](std::shared_ptr<Module> t){  return t->name == name; });
@@ -32,34 +36,38 @@ std::shared_ptr<Module> TypeCache::findModule(std::string name) {
 }
 
 
+
 void addIUnknownInterfceType() {
-    TypeCache::makeType<Type>("IUnknown");
+
 }
 
 void addStringType() {
-    TypeCache::makeType<Type>("string");
+
 }
 
 void addVoidType() {
-    TypeCache::makeType<Type>("void");
+
 }
 
-
 void TypeCache::init() {
-    TypeCache::makeType<Type>("int8");
-    TypeCache::makeType<Type>("int16");
-    TypeCache::makeType<Type>("int32");
-    TypeCache::makeType<Type>("int64");
-    TypeCache::makeType<Type>("uint8");
-    TypeCache::makeType<Type>("uint16");
-    TypeCache::makeType<Type>("uint32");
-    TypeCache::makeType<Type>("uint64");
-    TypeCache::makeType<Type>("float");
-    TypeCache::makeType<Type>("double");
+    auto primitiveModule = std::make_shared<Module>();
+    primitiveModule->name = primitiveModuleName();
+    primitiveModule->path = "";
+    modules.push_back(primitiveModule);
 
-    addIUnknownInterfceType();
-    addStringType();
-    addVoidType();
+    TypeCache::makePrimitiveType<Type>("int8");
+    TypeCache::makePrimitiveType<Type>("int16");
+    TypeCache::makePrimitiveType<Type>("int32");
+    TypeCache::makePrimitiveType<Type>("int64");
+    TypeCache::makePrimitiveType<Type>("uint8");
+    TypeCache::makePrimitiveType<Type>("uint16");
+    TypeCache::makePrimitiveType<Type>("uint32");
+    TypeCache::makePrimitiveType<Type>("uint64");
+    TypeCache::makePrimitiveType<Type>("float");
+    TypeCache::makePrimitiveType<Type>("double");
+    TypeCache::makePrimitiveType<Type>("IUnknown");
+    TypeCache::makePrimitiveType<Type>("string");
+    TypeCache::makePrimitiveType<Type>("void");
 }
 
 std::shared_ptr<Module> TypeCache::resolveImport(const std::string& path){
@@ -89,6 +97,7 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& path) {
             auto currentModule = std::make_shared<Module>();
             currentModule->name = moduleName;
             currentModule->path = path;
+            modules.push_back(currentModule);
             moduleParseStack.push(currentModule);
 
             CidlParser parser(&tokens);
@@ -102,6 +111,7 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& path) {
             currentModule->interfaces = moduleParser.interfaces;
 
             std::cout << "Module " << moduleName << " parse complete" << std::endl;
+            moduleParseStack.pop();
             return currentModule;
         }else{
             std::cout << "Module " << moduleName << " already parsed" << std::endl;
@@ -113,14 +123,38 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& path) {
     }
 }
 
+const std::vector<std::shared_ptr<Type>>& TypeCache::getTypes(){
+    return types;
+}
+const std::vector<std::shared_ptr<Module>>& TypeCache::getModules(){
+    return modules;
+}
 
+std::shared_ptr<Type> TypeCache::findType(TypeName name) {
+    auto module = findModule(name.module);
+    if(name.isPrimitive){
+        name.module = primitiveModuleName();
+    }
 
-std::shared_ptr<Type> TypeCache::findType(std::string name) {
-    auto it = std::find_if(types.begin(), types.end(), [name](std::shared_ptr<Type> t){  return t->name == name; });
+    if(!name.isPrimitive && name.isLocalType){
+        name.module = moduleParseStack.top()->name;
+    }
+
+    auto it = std::find_if(types.begin(), types.end(), [name](std::shared_ptr<Type> t){  return t->name == name.name && t->moduleName == name.module; });
     if(it == types.end()){
-        throw std::runtime_error("Type not found: " + name);
+        throw std::runtime_error("Type not found: " + name.module + "::" + name.name);
     }
     return *it;
 }
+
+std::shared_ptr<Type> TypeCache::findPrimitiveType(std::string name) {
+    TypeName tn;
+    tn.module = primitiveModuleName();
+    tn.isLocalType = false;
+    tn.isPrimitive = true;
+    tn.name = name;
+    return findType(tn);
+}
+
 
 

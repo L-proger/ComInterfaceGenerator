@@ -6,7 +6,7 @@ module
     ;
 
 attribute
-    : LEFT_SQUARE_BRACKET identifier (LEFT_BRACKET argument_list RIGHT_BRACKET)? RIGHT_SQUARE_BRACKET
+    : LEFT_SQUARE_BRACKET local_type (LEFT_BRACKET argument_list RIGHT_BRACKET)? RIGHT_SQUARE_BRACKET
     ;
 
 attribute_list
@@ -14,34 +14,50 @@ attribute_list
     ;
 
 interfaceDefinition 
-    : attribute_list ID_INTERFACE identifier interfaceInheritanceList? LCURLY method+ RCURLY
+    : attribute_list ID_INTERFACE local_type interfaceInheritanceList? LCURLY method+ RCURLY
     ;
 
-structField 
-    : structFieldType identifier SEMICOLON
+structField
+    : local_or_imported_type local_type SEMICOLON
     ;
 
-structFieldType 
-    : (primitive | identifier) 
-    ;
 
 structDefinition 
-    : ID_STRUCT identifier LCURLY structField+ RCURLY
+    : ID_STRUCT local_type LCURLY structField+ RCURLY
     ;
 
 enumDefinition 
-    : ID_ENUM identifier (COLON integer_primitive)? LCURLY enumField (',' enumField)* RCURLY
+    : ID_ENUM local_type (COLON integer_primitive)? LCURLY enumField (',' enumField)* RCURLY
     ;
 
-type_name
-    : primitive | identifier
+
+local_type
+    : primitive
+    | ID
+    ;
+imported_type_module
+    : (ID '.')+
+    ;
+
+imported_type_name
+    :  ID
+    ;
+
+imported_type
+    : imported_type_module imported_type_name
+    ;
+
+
+local_or_imported_type
+    : local_type
+    | imported_type
     ;
 
 reference_type_name
-    : type_name '&'
+    : local_or_imported_type '&'
     ;
 
-method_name: identifier;
+method_name: local_type;
 
 expression
     : STRING_LITERAL
@@ -72,8 +88,8 @@ argument_list
     ;
 
 method_parameter
-    : attribute_list? type_name identifier
-    | attribute_list? reference_type_name identifier
+    : attribute_list? local_or_imported_type local_type
+    | attribute_list? reference_type_name local_type
     ;
 
 method_parameter_list
@@ -81,15 +97,15 @@ method_parameter_list
     ;
 
 method
-    : type_name method_name LEFT_BRACKET method_parameter_list? RIGHT_BRACKET SEMICOLON
+    : local_or_imported_type method_name LEFT_BRACKET method_parameter_list? RIGHT_BRACKET SEMICOLON
     ;
 
 enumField 
-    : identifier ('=' enum_field_value)?
+    : local_type ('=' enum_field_value)?
     ;
 
 interfaceInheritanceList
-    : (COLON identifier)
+    : (COLON local_or_imported_type)
     ;
 
 import_file_path
@@ -143,6 +159,7 @@ primitive
     | 'double'
     | 'float'
     | 'void'
+    | 'IUnknown'
     ;
 
 integer_primitive 
@@ -186,10 +203,6 @@ ID_ENUM
 
 ID_IMPORT
     : 'import'
-    ;
-
-identifier
-    : ID
     ;
 
 LEFT_SQUARE_BRACKET

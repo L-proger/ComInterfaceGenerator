@@ -3,18 +3,22 @@
 #include "CidlBaseListener.h"
 #include <Type/StructType.h>
 #include <TypeCache.h>
+#include "TypeNameParser.h"
 
 class StructParser : public CidlBaseListener {
 public:
     std::shared_ptr<StructType> result;
 
     void enterStructDefinition(CidlParser::StructDefinitionContext* ctx) override {
-        result =TypeCache::makeType<StructType>(ctx->identifier()->getText());
+        auto structName = TypeNameParser::parse(ctx->local_type());
+        result = TypeCache::makeLocalType<StructType>(structName.name);
 
         for(auto& fieldCtx : ctx->structField()){
             StructType::Field field;
-            field.type = TypeCache::findType(fieldCtx->structFieldType()->getText());
-            field.name = fieldCtx->identifier()->getText();
+            auto fieldType = TypeNameParser::parse(fieldCtx->local_or_imported_type());
+            auto fieldName = TypeNameParser::parse(fieldCtx->local_type());
+            field.type = TypeCache::findType(fieldType);
+            field.name = fieldName.name;
             result->fields.push_back(field);
         }
     }

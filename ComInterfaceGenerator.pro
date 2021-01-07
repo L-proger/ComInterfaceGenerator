@@ -33,6 +33,7 @@ HEADERS += \
     Src/Parser/ModuleParser.h \
     Src/Parser/StringResolve.h \
     Src/Parser/StructParser.h \
+    Src/Parser/TypeNameParser.h \
     Src/Type/AttributeType.h \
     Src/Type/EnumType.h \
     Src/Type/InterfaceType.h \

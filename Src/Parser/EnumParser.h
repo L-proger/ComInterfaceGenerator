@@ -9,10 +9,11 @@ class EnumParser : public CidlBaseListener {
 public:
     std::shared_ptr<EnumType> result;
     void enterEnumDefinition(CidlParser::EnumDefinitionContext * ctx) override {
-        result = TypeCache::makeType<EnumType>(ctx->identifier()->getText());
+        auto enumName = TypeNameParser::parse(ctx->local_type());
+        result = TypeCache::makeLocalType<EnumType>(enumName.name);
 
         auto fieldTypeName = ctx->integer_primitive()->getText();
-        auto fieldType = TypeCache::findType(fieldTypeName);
+        auto fieldType = TypeCache::findPrimitiveType(fieldTypeName);
 
         result->fieldType = fieldType;
 
@@ -20,7 +21,7 @@ public:
 
         for(auto& fieldCtx : ctx->enumField()){
             EnumType::Field field;
-            field.name = fieldCtx->identifier()->getText();
+            field.name = TypeNameParser::parse(fieldCtx->local_type()).name;
 
             auto valueContext = fieldCtx->enum_field_value();
             if(valueContext != nullptr){

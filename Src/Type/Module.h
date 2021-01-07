@@ -12,4 +12,6 @@ public:
     std::vector<std::shared_ptr<EnumType>> enums;
     std::vector<std::shared_ptr<StructType>> structs;
     std::vector<std::shared_ptr<InterfaceType>> interfaces;
+
+    std::vector<std::shared_ptr<Type>> types;
 };

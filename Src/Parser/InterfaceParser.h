@@ -10,8 +10,8 @@ public:
     std::shared_ptr<InterfaceType> result;
 
     void enterInterfaceDefinition(CidlParser::InterfaceDefinitionContext* ctx) override {
-        result = TypeCache::makeType<InterfaceType>(ctx->identifier()->getText());
-        result->baseInterfaceType = std::dynamic_pointer_cast<InterfaceType>(TypeCache::findType(ctx->interfaceInheritanceList()->identifier()->getText()));
+        result = TypeCache::makeLocalType<InterfaceType>(ctx->local_type()->getText());
+        result->baseInterfaceType = std::dynamic_pointer_cast<InterfaceType>(TypeCache::findType(TypeNameParser::parse(ctx->interfaceInheritanceList()->local_or_imported_type())));
 
         auto attributesList = ctx->attribute_list();
         if(attributesList != nullptr){
