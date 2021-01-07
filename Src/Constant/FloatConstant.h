@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NumericConstant.h"
+#include <sstream>
 
 class FloatConstant : public NumericConstant {
 public:
@@ -22,5 +23,10 @@ public:
     }
     std::shared_ptr<Constant> copy() override {
         return std::make_shared<FloatConstant>(type, value);
+    }
+    std::string toString() override {
+        std::stringstream ss;
+        ss << value << "f";
+        return ss.str();
     }
 };

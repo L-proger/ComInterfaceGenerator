@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NumericConstant.h"
+#include <sstream>
 
 template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
 class IntegerConstant : public NumericConstant {
@@ -25,6 +26,12 @@ public:
     }
     std::shared_ptr<Constant> copy() override {
         return std::static_pointer_cast<Constant>(std::make_shared<IntegerConstant>(type, value));
+    }
+
+    std::string toString() override {
+        std::stringstream ss;
+        ss << +value;
+        return ss.str();
     }
 };
 

@@ -36,19 +36,6 @@ std::shared_ptr<Module> TypeCache::findModule(std::string name) {
 }
 
 
-
-void addIUnknownInterfceType() {
-
-}
-
-void addStringType() {
-
-}
-
-void addVoidType() {
-
-}
-
 void TypeCache::init() {
     auto primitiveModule = std::make_shared<Module>();
     primitiveModule->name = primitiveModuleName();
@@ -65,7 +52,7 @@ void TypeCache::init() {
     TypeCache::makePrimitiveType<Type>("uint64");
     TypeCache::makePrimitiveType<Type>("float");
     TypeCache::makePrimitiveType<Type>("double");
-    TypeCache::makePrimitiveType<Type>("IUnknown");
+    TypeCache::makePrimitiveType<InterfaceType>("IUnknown");
     TypeCache::makePrimitiveType<Type>("string");
     TypeCache::makePrimitiveType<Type>("void");
 }
@@ -109,6 +96,7 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& path) {
             currentModule->enums = moduleParser.enums;
             currentModule->structs = moduleParser.structs;
             currentModule->interfaces = moduleParser.interfaces;
+            currentModule->imports = moduleParser.imports;
 
             std::cout << "Module " << moduleName << " parse complete" << std::endl;
             moduleParseStack.pop();
@@ -131,10 +119,12 @@ const std::vector<std::shared_ptr<Module>>& TypeCache::getModules(){
 }
 
 std::shared_ptr<Type> TypeCache::findType(TypeName name) {
-    auto module = findModule(name.module);
     if(name.isPrimitive){
         name.module = primitiveModuleName();
     }
+
+    auto module = findModule(name.module);
+
 
     if(!name.isPrimitive && name.isLocalType){
         name.module = moduleParseStack.top()->name;

@@ -11,4 +11,5 @@ public:
 
     }
     virtual std::shared_ptr<Constant> copy() = 0;
+    virtual std::string toString() = 0;
 };

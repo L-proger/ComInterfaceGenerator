@@ -12,12 +12,9 @@
 class TypeCache {
 public:
     static const char* primitiveModuleName();
-
-
     static void init();
 
     static std::shared_ptr<Module> parseModule(const std::string& path);
-
     static std::shared_ptr<Type> findPrimitiveType(std::string name);
     static std::shared_ptr<Type> findType(TypeName name);
 
@@ -43,8 +40,6 @@ public:
     }
 
     static std::shared_ptr<Module> findModule(std::string name);
-
-
     static const std::vector<std::shared_ptr<Type>>& getTypes();
     static const std::vector<std::shared_ptr<Module>>& getModules();
 private:

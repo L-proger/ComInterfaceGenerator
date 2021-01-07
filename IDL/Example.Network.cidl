@@ -16,6 +16,6 @@ struct Vector3{
 [Guid("5A651458-7E3C-4FE1-860D-8F75D15FBF60", 1.0e-3f)]
 [OMG]
 interface INetwork : IUnknown {
-    void update([const][in]int32& a, [in]float b);
+    Vector3 update([const][in]int32& a, [in]NodeStatus b);
     void update2([const]int8 a, float b);
 }

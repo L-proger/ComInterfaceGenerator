@@ -1,7 +1,0 @@
-import "Network.cidl"
-
-[Guid("6B751459-0E3C-4FE1-860D-8F75D15FBF66", 1.0e-3f)]
-interface INetwork2 : Network.INetwork {
-    void update3();
-}
-

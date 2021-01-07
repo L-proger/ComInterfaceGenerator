@@ -9,4 +9,8 @@ public:
     std::shared_ptr<Constant> copy() override {
         return std::make_shared<StringConstant>(type, value);
     }
+    std::string toString() override {
+
+        return value;
+    }
 };
