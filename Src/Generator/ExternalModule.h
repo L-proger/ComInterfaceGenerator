@@ -4,5 +4,5 @@
 
 class ExternalModule : public Module {
 public:
-
+    bool implicitReference = false;
 };

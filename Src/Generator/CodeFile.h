@@ -6,6 +6,7 @@
 #include <vector>
 #include <Type/Type.h>
 #include <Type/Module.h>
+#include <Generator/ExternalModule.h>
 
 class CodeFile {
 public:

@@ -6,6 +6,8 @@
 #include <Type/InterfaceType.h>
 #include <Type/StructType.h>
 #include <Type/EnumType.h>
+#include <TypeCache.h>
+#include <unordered_map>
 
 class CppCodeFile : public CodeFile {
 public:
@@ -54,11 +56,39 @@ public:
         return *this;
     }
 
+    std::unordered_map<std::string, std::shared_ptr<Module>> getImportedModules(std::shared_ptr<Module> module) {
+        std::unordered_map<std::string, std::shared_ptr<Module>> references;
+        for(auto& dep : module->importedTypes){
+            auto depModule = TypeCache::findModule(dep->type->moduleName);
+            references[depModule->name] = depModule;
+        }
+        return references;
+    }
+
+
+
     void writeModule(std::shared_ptr<Module> module) override {
         _module = module;
 
+        auto importedModules = getImportedModules(module);
+
         for(auto& dep : module->importedTypes){
-            comment("imported type: " + dep->type->moduleName + "::" + dep->type->name).writeLine();
+            comment("imported type: " + dep->type->name + " from module: " + dep->type->moduleName).writeLine();
+        }
+
+        for(auto& importedModule : importedModules){
+            auto m = importedModule.second;
+            auto external = std::dynamic_pointer_cast<ExternalModule>(m);
+
+            if(external != nullptr && external->implicitReference){
+                continue;
+            }
+
+            write("#include <").write(m->name);
+            if(external == nullptr){
+                write(".h");
+            }
+            writeLine(">");
         }
 
         for(auto& type : module->types){

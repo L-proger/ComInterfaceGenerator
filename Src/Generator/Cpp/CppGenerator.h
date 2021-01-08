@@ -21,6 +21,7 @@ public:
         TypeCache::replaceType(primitiveModule->findType("int64"), cstdintModule->addNewType("std::int64_t"));
 
         auto languagePrimitiveModule = TypeCache::addModule<ExternalModule>("LanguagePrimitive");
+        languagePrimitiveModule->implicitReference = true;
         TypeCache::replaceType(primitiveModule->findType("void"), languagePrimitiveModule->addNewType("void"));
         TypeCache::replaceType(primitiveModule->findType("float"), languagePrimitiveModule->addNewType("float"));
         TypeCache::replaceType(primitiveModule->findType("double"), languagePrimitiveModule->addNewType("double"));
