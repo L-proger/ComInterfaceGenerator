@@ -7,7 +7,7 @@
 
 class EnumParser : public CidlBaseListener {
 public:
-    std::shared_ptr<EnumType> result;
+    std::shared_ptr<TypeRef> result;
     void enterEnumDefinition(CidlParser::EnumDefinitionContext * ctx) override {
         auto enumName = TypeNameParser::parse(ctx->local_type());
         result = TypeCache::makeLocalType<EnumType>(enumName.name);
@@ -15,7 +15,8 @@ public:
         auto fieldTypeName = ctx->integer_primitive()->getText();
         auto fieldType = TypeCache::findPrimitiveType(fieldTypeName);
 
-        result->fieldType = fieldType;
+        auto enumType = std::dynamic_pointer_cast<EnumType>(result->type);
+        enumType->fieldType = fieldType;
 
         auto currentValue = makeIntegerConstant(fieldType, "0", false);
 
@@ -32,7 +33,7 @@ public:
                 field.value = std::dynamic_pointer_cast<NumericConstant>(currentValue->copy());
                 currentValue->increment();
             }
-            result->fields.push_back(field);
+            enumType->fields.push_back(field);
         }
     }
 };

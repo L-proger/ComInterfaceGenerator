@@ -14,7 +14,6 @@
 #include "tree/ParseTree.h"
 #include "tree/ErrorNode.h"
 #include <Parser/ModuleParser.h>
-
 #include <filesystem>
 #include <Parser/StringResolve.h>
 
@@ -22,8 +21,6 @@ const char* TypeCache::primitiveModuleName(){
     return "$primitive";
 }
 
-
-//std::vector<std::shared_ptr<Type>> TypeCache::types;
 std::vector<std::shared_ptr<Module>> TypeCache::modules;
 std::stack<std::shared_ptr<Module>> TypeCache::moduleParseStack;
 std::vector<std::filesystem::path> searchPaths;
@@ -36,12 +33,7 @@ std::shared_ptr<Module> TypeCache::findModule(std::string name) {
     return *it;
 }
 
-void TypeCache::addModule(std::shared_ptr<Module> module){
-    if(findModule(module->name) != nullptr){
-        throw std::runtime_error("Module already exists");
-    }
-    modules.push_back(module);
-}
+
 
 std::filesystem::path TypeCache::findModulePath(const std::string& name){
     std::string ext = ".cidl";
@@ -131,14 +123,11 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& name) {
     }
 }
 
-/*const std::vector<std::shared_ptr<Type>>& TypeCache::getTypes(){
-    return types;
-}*/
 const std::vector<std::shared_ptr<Module>>& TypeCache::getModules(){
     return modules;
 }
 
-std::shared_ptr<Type> TypeCache::findOrDefineReferencedType(TypeName name) {
+std::shared_ptr<TypeRef> TypeCache::findOrDefineReferencedType(TypeName name) {
     if(name.isPrimitive){
         name.module = primitiveModuleName();
     }
@@ -163,15 +152,17 @@ std::shared_ptr<Type> TypeCache::findOrDefineReferencedType(TypeName name) {
         if(t == nullptr){
             throw std::runtime_error("Type not found: " + name.module + "::" + name.name);
         }else{
-            if(!name.isLocalType){
-                moduleParseStack.top()->addDependency(module, t);
+            if(name.isPrimitive || !name.isLocalType){
+                moduleParseStack.top()->addImportedType(t);
+            }else{
+                std::cout << "Skip local dep: " << name.name << std::endl;
             }
             return t;
         }
     }
 }
 
-std::shared_ptr<Type> TypeCache::findPrimitiveType(std::string name) {
+std::shared_ptr<TypeRef> TypeCache::findPrimitiveType(std::string name) {
     TypeName tn;
     tn.module = primitiveModuleName();
     tn.isLocalType = false;
@@ -181,16 +172,19 @@ std::shared_ptr<Type> TypeCache::findPrimitiveType(std::string name) {
 }
 
 
-void TypeCache::replaceType(std::shared_ptr<Type> srcType, std::shared_ptr<Type> dstType){
-    auto module = findModule(srcType->moduleName);
+void TypeCache::replaceType(std::shared_ptr<TypeRef> srcType, std::shared_ptr<TypeRef> dstType){
+    auto module = findModule(srcType->type->moduleName);
     if(module == nullptr){
         throw new std::runtime_error("Can not replace type. Module not found:");
     }
 
-    for(auto m : modules){
-        auto dep = m->findDependency(srcType->moduleName);
+    srcType->type = dstType->type;
+
+    /*for(auto m : modules){
+        auto dep = m->findImportedType(srcType);
         if(dep != nullptr){
             if(dep->removeType(srcType)){
+                std::cout << "Replace type: " << m->name << "::" << srcType->name  << " with type " << dstType->moduleName << "::" << dstType->name << std::endl;
                 m->addDependency(findModule(dstType->moduleName), dstType);
             }
 
@@ -198,7 +192,7 @@ void TypeCache::replaceType(std::shared_ptr<Type> srcType, std::shared_ptr<Type>
                 m->removeDependency(dep->module->name);
             }
         }
-    }
+    }*/
 }
 
 

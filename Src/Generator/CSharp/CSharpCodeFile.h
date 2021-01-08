@@ -55,8 +55,8 @@ public:
 
 
 private:
-    void writeType(std::shared_ptr<Type> type) {
-        auto interfaceType = std::dynamic_pointer_cast<InterfaceType>(type);
+    void writeType(std::shared_ptr<TypeRef> type) {
+       /* auto interfaceType = std::dynamic_pointer_cast<InterfaceType>(type);
         if(interfaceType != nullptr){
             writeInterface(interfaceType);
             return;
@@ -72,7 +72,7 @@ private:
         if(structType != nullptr){
             writeStruct(structType);
             return;
-        }
+        }*/
     }
 
 
@@ -80,7 +80,7 @@ private:
         return type->moduleName + "." + type->name;
     }
 
-    void writeInterface(std::shared_ptr<InterfaceType> type) {
+    /*void writeInterface(std::shared_ptr<InterfaceType> type) {
         write("public interface ").write(type->name).write(" : ");
 
         if(type->baseInterfaceType != nullptr){
@@ -102,7 +102,7 @@ private:
 
     void writeEnum(std::shared_ptr<EnumType> type) {
 
-    }
+    }*/
 
     std::string _currentScopeName;
 };

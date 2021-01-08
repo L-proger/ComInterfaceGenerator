@@ -16,16 +16,25 @@ public:
     static void init();
 
     static std::shared_ptr<Module> parseModule(const std::string& name);
-    static std::shared_ptr<Type> findPrimitiveType(std::string name);
-    static std::shared_ptr<Type> findOrDefineReferencedType(TypeName name);
+    static std::shared_ptr<TypeRef> findPrimitiveType(std::string name);
+    static std::shared_ptr<TypeRef> findOrDefineReferencedType(TypeName name);
 
     static void addSearchPath(std::filesystem::path path);
     static std::filesystem::path findModulePath(const std::string& name);
 
-    static void addModule(std::shared_ptr<Module> module);
+    template<typename TModule>
+    static std::shared_ptr<TModule> addModule(const std::string& name){
+        if(findModule(name) != nullptr){
+            throw std::runtime_error("Module already exists");
+        }
+        auto module = std::make_shared<TModule>();
+        module->name = name;
+        modules.push_back(module);
+        return module;
+    }
 
     template<typename T, typename ... Args>
-    static std::shared_ptr<T> makeLocalType(const std::string& name, Args&&... args){
+    static std::shared_ptr<TypeRef> makeLocalType(const std::string& name, Args&&... args){
         TypeName tn;
         tn.isLocalType = true;
         tn.isPrimitive = false;
@@ -35,12 +44,15 @@ public:
         if( moduleParseStack.top()->findType(name) != nullptr){
             throw std::runtime_error("Type already exists");
         }else{
-            auto newType = std::make_shared<T, Args...>(std::move<Args>(args)...);
+            auto newType = std::make_shared<T>(std::move<Args>(args)...);
             newType->name = tn.name;
             newType->moduleName = tn.module;
             //types.push_back(newType);
-            moduleParseStack.top()->types.push_back(newType);
-            return newType;
+
+            auto tr = std::make_shared<TypeRef>();
+            tr->type = newType;
+            moduleParseStack.top()->types.push_back(tr);
+            return tr;
         }
     }
 
@@ -49,16 +61,19 @@ public:
     static const std::vector<std::shared_ptr<Module>>& getModules();
 
 
-    static void replaceType(std::shared_ptr<Type> srcType, std::shared_ptr<Type> dstType);
+    static void replaceType(std::shared_ptr<TypeRef> srcType, std::shared_ptr<TypeRef> dstType);
 private:
     template<typename T, typename ... Args>
-    static std::shared_ptr<T> makePrimitiveType(const std::string& name, Args&&... args){
+    static std::shared_ptr<TypeRef> makePrimitiveType(const std::string& name, Args&&... args){
         auto newType = std::make_shared<T, Args...>(std::move<Args>(args)...);
         newType->name = name;
         newType->moduleName = primitiveModuleName();
         //types.push_back(newType);
-        findModule(primitiveModuleName())->types.push_back(newType);
-        return newType;
+
+        auto tr = std::make_shared<TypeRef>();
+        tr->type = newType;
+        findModule(primitiveModuleName())->types.push_back(tr);
+        return tr;
     }
 
     //static std::vector<std::shared_ptr<Type>> types;

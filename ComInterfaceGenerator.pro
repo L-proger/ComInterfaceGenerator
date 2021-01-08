@@ -47,4 +47,5 @@ HEADERS += \
     Src/Type/Module.h \
     Src/Type/StructType.h \
     Src/Type/Type.h \
+    Src/Type/TypeRef.h \
     Src/TypeCache.h

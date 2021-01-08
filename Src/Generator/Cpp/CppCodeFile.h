@@ -57,12 +57,12 @@ public:
     void writeModule(std::shared_ptr<Module> module) override {
         _module = module;
 
-        for(auto& dep : module->dependencies){
-            comment("imports: " + dep->module->name).writeLine();
+        for(auto& dep : module->importedTypes){
+            comment("imported type: " + dep->type->moduleName + "::" + dep->type->name).writeLine();
         }
 
         for(auto& type : module->types){
-            writeType(type);
+            writeType(type->type);
         }
 
     }
@@ -107,12 +107,13 @@ private:
         writeLine("template<>");
 
         write("struct ").write("InterfaceAbi<").write(fullName(type)).write(">");
+        auto baseInterfaceType = std::dynamic_pointer_cast<InterfaceType>(type)->baseInterfaceType;
         if(type->baseInterfaceType != nullptr){
-            write(" : public InterfaceAbi<").write(fullName(type->baseInterfaceType)).write(">");
+            write(" : public InterfaceAbi<").write(fullName(baseInterfaceType->type)).write(">");
         }
         beginScope(type->name);//ABI
         if(type->baseInterfaceType != nullptr){
-            write("using Base = InterfaceAbi<").write(fullName(type->baseInterfaceType)).writeLine(">;");\
+            write("using Base = InterfaceAbi<").write(fullName(baseInterfaceType->type)).writeLine(">;");\
         }
 
         //TODO: write ID()
@@ -140,13 +141,13 @@ private:
     }
 
     void writeStructField(StructType::Field field){
-        write(fullName(field.type)).write(" ").write(field.name).writeLine(";");
+        write(fullName(field.type->type)).write(" ").write(field.name).writeLine(";");
     }
 
     void writeEnum(std::shared_ptr<EnumType> type) {
         beginNamespaceScope(_module->name);
         //Tag declaration
-        write("enum ").write(type->name).write(" : ").write(fullName(type->fieldType));
+        write("enum ").write(type->name).write(" : ").write(fullName(type->fieldType->type));
         beginScope(type->name);
         for(auto& field : type->fields){
             writeEnumField(field);
@@ -163,7 +164,7 @@ private:
         write("virtual Result ").write(desc.name).write("(");
         for(std::size_t i = 0; i < desc.args.size(); ++i){
             writeAbiArg(desc.args[i]);
-            if(desc.returnType->name == "void"){
+            if(desc.returnType->type->name == "void"){
                 if(i < desc.args.size() - 1){
                      write(", ");
                 }
@@ -172,7 +173,7 @@ private:
             }
         }
 
-        if(desc.returnType->name != "void"){
+        if(desc.returnType->type->name != "void"){
             MethodArg arg;
             arg.name = "result";
             arg.reference = true;
@@ -184,7 +185,7 @@ private:
     }
 
     void writeAbiArg(MethodArg arg) {
-        write(fullName(arg.type));
+        write(fullName(arg.type->type));
         if(arg.reference){
             write("&");
         }
