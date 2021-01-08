@@ -6,7 +6,7 @@
 #include <Generator/Guid.h>
 #include <Generator/Attribute/AttributeUtils.h>
 
-int main() {
+void run() {
     TypeCache::init();
     std::filesystem::path srcPath(SRC_DIR);
     auto apiPath = srcPath / "IDL";
@@ -22,11 +22,19 @@ int main() {
 
     auto attributes = AttributeList::parse(inetwork->attributes);
 
-
-
-
     CppGenerator gen("ololo");
     gen.generate();
+}
 
-    return 0;
+int main() {
+    try{
+        run();
+        return 0;
+    }catch(const std::exception& ex){
+        std::cerr << "Error occured: " << ex.what() << std::endl;
+        return -1;
+    }catch(...){
+        std::cerr << "Unexpected error occured" << std::endl;
+        return -1;
+    }
 }

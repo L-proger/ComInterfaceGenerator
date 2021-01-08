@@ -18,9 +18,11 @@ public:
     static std::shared_ptr<Module> parseModule(const std::string& name);
     static std::shared_ptr<TypeRef> findPrimitiveType(std::string name);
     static std::shared_ptr<TypeRef> findOrDefineReferencedType(TypeName name);
-
     static void addSearchPath(std::filesystem::path path);
     static std::filesystem::path findModulePath(const std::string& name);
+    static std::shared_ptr<Module> findModule(std::string name);
+    static const std::vector<std::shared_ptr<Module>>& getModules();
+    static void replaceType(std::shared_ptr<TypeRef> srcType, std::shared_ptr<TypeRef> dstType);
 
     template<typename TModule>
     static std::shared_ptr<TModule> addModule(const std::string& name){
@@ -42,12 +44,11 @@ public:
         tn.module = moduleParseStack.top()->name;
 
         if( moduleParseStack.top()->findType(name) != nullptr){
-            throw std::runtime_error("Type already exists");
+            throw std::runtime_error("Multiple types with the same name \"" + name + "\" defined in module \"" + tn.module + "\"");
         }else{
             auto newType = std::make_shared<T>(std::move<Args>(args)...);
             newType->name = tn.name;
             newType->moduleName = tn.module;
-            //types.push_back(newType);
 
             auto tr = std::make_shared<TypeRef>();
             tr->type = newType;
@@ -56,12 +57,7 @@ public:
         }
     }
 
-    static std::shared_ptr<Module> findModule(std::string name);
-    //static const std::vector<std::shared_ptr<Type>>& getTypes();
-    static const std::vector<std::shared_ptr<Module>>& getModules();
 
-
-    static void replaceType(std::shared_ptr<TypeRef> srcType, std::shared_ptr<TypeRef> dstType);
 private:
     template<typename T, typename ... Args>
     static std::shared_ptr<TypeRef> makePrimitiveType(const std::string& name, Args&&... args){
