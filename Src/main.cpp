@@ -13,7 +13,6 @@ int main() {
 
     auto module = TypeCache::parseModule("Example.Network2");
 
-    auto allTypes = TypeCache::getTypes();
     auto allModules = TypeCache::getModules();
 
     CppGenerator gen("ololo");

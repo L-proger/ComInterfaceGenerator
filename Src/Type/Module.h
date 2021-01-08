@@ -17,6 +17,15 @@ public:
                 types.push_back(type);
             }
         }
+
+        bool removeType(std::shared_ptr<Type> type) {
+            auto it = std::find_if(types.begin(), types.end(), [type](std::shared_ptr<Type> t){ return t == type; });
+            if(it == types.end()){
+                return false;
+            }
+            types.erase(it);
+            return true;
+        }
     };
 
 
@@ -43,8 +52,22 @@ public:
         return nullptr;
     }
 
+    bool removeDependency(const std::string& moduleName) {
+        auto it = std::find_if(dependencies.begin(), dependencies.end(), [moduleName](std::shared_ptr<Dependency> t){ return t->module->name == moduleName; });
+        if(it != dependencies.end()){
+            dependencies.erase(it);
+            return true;
+        }
+        return false;
+    }
+
     bool hasDependency(std::shared_ptr<Module> module) {
         auto it = std::find_if(dependencies.begin(), dependencies.end(), [module](std::shared_ptr<Dependency> t){ return t->module == module; });
+        return it != dependencies.end();
+    }
+
+    bool hasDependency(const std::string& moduleName) {
+        auto it = std::find_if(dependencies.begin(), dependencies.end(), [moduleName](std::shared_ptr<Dependency> t){ return t->module->name == moduleName; });
         return it != dependencies.end();
     }
 
