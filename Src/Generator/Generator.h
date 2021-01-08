@@ -5,6 +5,7 @@
 #include <map>
 #include <iostream>
 #include <TypeCache.h>
+#include <Generator/ExternalModule.h>
 
 class Generator {
 public:
@@ -13,7 +14,9 @@ public:
     void generate() {
         auto modules = TypeCache::getModules();
         for(auto& module : modules){
-            if(!isGenerated(module)){
+
+            auto externalModule = std::dynamic_pointer_cast<ExternalModule>(module) != nullptr;
+            if((module->name != TypeCache::primitiveModuleName()) && !externalModule && !isGenerated(module)){
                 _generatedModules.push_back(module);
                 auto file = createCodeFile();
                 file->writeModule(module);

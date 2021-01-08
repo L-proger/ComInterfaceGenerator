@@ -30,6 +30,7 @@ HEADERS += \
     Src/Generator/CodeFile.h \
     Src/Generator/Cpp/CppCodeFile.h \
     Src/Generator/Cpp/CppGenerator.h \
+    Src/Generator/ExternalModule.h \
     Src/Generator/Generator.h \
     Src/Parser/AttributeListParser.h \
     Src/Parser/AttributeParser.h \

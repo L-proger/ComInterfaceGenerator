@@ -14,6 +14,7 @@ public:
     std::vector<std::shared_ptr<TypeRef>> importedTypes;
 
 
+    virtual ~Module() = default;
     std::shared_ptr<TypeRef> addNewType(const std::string& typeName){
         auto type = std::make_shared<Type>();
         type->name = typeName;
