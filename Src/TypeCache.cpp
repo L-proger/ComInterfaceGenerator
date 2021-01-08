@@ -73,15 +73,7 @@ void TypeCache::init() {
     TypeCache::makePrimitiveType<Type>("void");
 }
 
-std::shared_ptr<Module> TypeCache::resolveImport(const std::string& path){
-    auto realPath = StringResolve::resolve(path);
-    auto currentModule = moduleParseStack.top();
-    auto currentModuleDir = std::filesystem::path(currentModule->path).parent_path();
 
-    auto importPath = currentModuleDir / realPath;
-
-    return parseModule(importPath.string());
-}
 
 std::shared_ptr<Module> TypeCache::parseModule(const std::string& name) {
 
@@ -107,18 +99,18 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& name) {
             CidlParser parser(&tokens);
             auto module = parser.module();
 
-            ModuleParser moduleParser(&TypeCache::resolveImport, currentModule);
+            ModuleParser moduleParser;
             module->enterRule(&moduleParser);
 
-            std::cout << "Module " << moduleName << " parse complete" << std::endl;
+            //std::cout << "Module " << moduleName << " parse complete" << std::endl;
             moduleParseStack.pop();
             return currentModule;
         }else{
-            std::cout << "Module " << moduleName << " already parsed" << std::endl;
+            //std::cout << "Module " << moduleName << " already parsed" << std::endl;
             return findModule(moduleName);
         }
     }else{
-        std::cout << "Failed to read code file!" << std::endl;
+        std::cerr << "Failed to read code file!" << std::endl;
         throw std::runtime_error("Module parsing failed");
     }
 }
@@ -139,7 +131,7 @@ std::shared_ptr<TypeRef> TypeCache::findOrDefineReferencedType(TypeName name) {
     auto module = findModule(name.module);
     if(!name.isLocalType && !name.isPrimitive){
         if(module == nullptr){
-            std::cout << "Parse dependent module: " << name.module << std::endl;
+            //std::cout << "Parse dependent module: " << name.module << std::endl;
             module = parseModule(name.module);
         }
     }
@@ -155,7 +147,7 @@ std::shared_ptr<TypeRef> TypeCache::findOrDefineReferencedType(TypeName name) {
             if(name.isPrimitive || !name.isLocalType){
                 moduleParseStack.top()->addImportedType(t);
             }else{
-                std::cout << "Skip local dep: " << name.name << std::endl;
+                //std::cout << "Skip local dep: " << name.name << std::endl;
             }
             return t;
         }

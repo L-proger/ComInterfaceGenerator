@@ -6,7 +6,7 @@
 
 class InterfaceType : public Type {
 public:
-    std::vector<std::shared_ptr<TypeRef>> attributes;
+    std::vector<std::shared_ptr<AttributeType>> attributes;
     std::shared_ptr<TypeRef> baseInterfaceType;
     std::vector<MethodDesc> methods;
 };

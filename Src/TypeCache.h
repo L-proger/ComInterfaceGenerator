@@ -76,9 +76,6 @@ private:
         return tr;
     }
 
-    //static std::vector<std::shared_ptr<Type>> types;
     static std::vector<std::shared_ptr<Module>> modules;
     static std::stack<std::shared_ptr<Module>> moduleParseStack;
-
-    static std::shared_ptr<Module> resolveImport(const std::string& path);
 };

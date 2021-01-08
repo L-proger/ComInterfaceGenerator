@@ -25,6 +25,9 @@ HEADERS += \
     Src/Constant/IntegerConstant.h \
     Src/Constant/NumericConstant.h \
     Src/Constant/StringConstant.h \
+    Src/Generator/Attribute/Attribute.h \
+    Src/Generator/Attribute/AttributeUtils.h \
+    Src/Generator/Attribute/GuidAttribute.h \
     Src/Generator/CSharp/CSharpCodeFile.h \
     Src/Generator/CSharp/CSharpGenerator.h \
     Src/Generator/CodeFile.h \
@@ -32,6 +35,7 @@ HEADERS += \
     Src/Generator/Cpp/CppGenerator.h \
     Src/Generator/ExternalModule.h \
     Src/Generator/Generator.h \
+    Src/Generator/Guid.h \
     Src/Parser/AttributeListParser.h \
     Src/Parser/AttributeParser.h \
     Src/Parser/EnumParser.h \

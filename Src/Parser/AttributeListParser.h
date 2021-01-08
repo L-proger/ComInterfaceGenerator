@@ -6,7 +6,7 @@
 
 class AttributeListParser : public CidlBaseListener {
 public:
-    std::vector<std::shared_ptr<TypeRef>> result;
+    std::vector<std::shared_ptr<AttributeType>> result;
 
     void enterAttribute_list(CidlParser::Attribute_listContext * ctx) override {
         for(auto& attributeCtx : ctx->attribute()){

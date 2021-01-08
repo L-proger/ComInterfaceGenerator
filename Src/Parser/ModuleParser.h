@@ -10,7 +10,7 @@
 
 class ModuleParser : public CidlBaseListener {
 public:
-    ModuleParser(std::function<std::shared_ptr<Module>(std::string)> importHandler, std::shared_ptr<Module> result) : _importHandler(importHandler), result(result){
+    ModuleParser(){
 
     }
 
@@ -45,7 +45,4 @@ public:
             //interfaces.push_back(parser.result);
         }
     }
-private:
-    std::function<std::shared_ptr<Module>(std::string)> _importHandler;
-    std::shared_ptr<Module> result;
 };
