@@ -8,15 +8,19 @@
 #include <Type/Module.h>
 #include <Parser/TypeNameParser.h>
 #include <stack>
+#include <filesystem>
 
 class TypeCache {
 public:
     static const char* primitiveModuleName();
     static void init();
 
-    static std::shared_ptr<Module> parseModule(const std::string& path);
+    static std::shared_ptr<Module> parseModule(const std::string& name);
     static std::shared_ptr<Type> findPrimitiveType(std::string name);
-    static std::shared_ptr<Type> findType(TypeName name);
+    static std::shared_ptr<Type> findOrDefineReferencedType(TypeName name);
+
+    static void addSearchPath(std::filesystem::path path);
+    static std::filesystem::path findModulePath(const std::string& name);
 
     template<typename T, typename ... Args>
     static std::shared_ptr<T> makeLocalType(const std::string& name, Args&&... args){
@@ -26,10 +30,9 @@ public:
         tn.name = name;
         tn.module = moduleParseStack.top()->name;
 
-        try{
-            findType(tn);
+        if( moduleParseStack.top()->findType(name) != nullptr){
             throw std::runtime_error("Type already exists");
-        }catch(...){
+        }else{
             auto newType = std::make_shared<T, Args...>(std::move<Args>(args)...);
             newType->name = tn.name;
             newType->moduleName = tn.module;
@@ -42,6 +45,9 @@ public:
     static std::shared_ptr<Module> findModule(std::string name);
     static const std::vector<std::shared_ptr<Type>>& getTypes();
     static const std::vector<std::shared_ptr<Module>>& getModules();
+
+
+    static void replaceType(std::shared_ptr<Type> srcType, std::shared_ptr<Type> dstType, const std::string moduleName);
 private:
     template<typename T, typename ... Args>
     static std::shared_ptr<T> makePrimitiveType(const std::string& name, Args&&... args){

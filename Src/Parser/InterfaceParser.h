@@ -11,7 +11,7 @@ public:
 
     void enterInterfaceDefinition(CidlParser::InterfaceDefinitionContext* ctx) override {
         result = TypeCache::makeLocalType<InterfaceType>(ctx->local_type()->getText());
-        result->baseInterfaceType = std::dynamic_pointer_cast<InterfaceType>(TypeCache::findType(TypeNameParser::parse(ctx->interfaceInheritanceList()->local_or_imported_type())));
+        result->baseInterfaceType = std::dynamic_pointer_cast<InterfaceType>(TypeCache::findOrDefineReferencedType(TypeNameParser::parse(ctx->interfaceInheritanceList()->local_or_imported_type())));
 
         auto attributesList = ctx->attribute_list();
         if(attributesList != nullptr){

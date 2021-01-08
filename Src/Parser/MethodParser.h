@@ -10,7 +10,7 @@ public:
 
     void enterMethod(CidlParser::MethodContext* ctx) override {
         result.name = ctx->method_name()->getText();
-        result.returnType = TypeCache::findType(TypeNameParser::parse(ctx->local_or_imported_type()));
+        result.returnType = TypeCache::findOrDefineReferencedType(TypeNameParser::parse(ctx->local_or_imported_type()));
 
 
         auto paramList = ctx->method_parameter_list();
@@ -26,10 +26,10 @@ public:
                 }
 
                 if(paramCtx->local_or_imported_type() != nullptr){
-                    arg.type = TypeCache::findType(TypeNameParser::parse(paramCtx->local_or_imported_type()));
+                    arg.type = TypeCache::findOrDefineReferencedType(TypeNameParser::parse(paramCtx->local_or_imported_type()));
                     arg.reference = false;
                 }else{
-                    arg.type = TypeCache::findType(TypeNameParser::parse(paramCtx->reference_type_name()->local_or_imported_type()));
+                    arg.type = TypeCache::findOrDefineReferencedType(TypeNameParser::parse(paramCtx->reference_type_name()->local_or_imported_type()));
                     arg.reference = true;
                 }
 

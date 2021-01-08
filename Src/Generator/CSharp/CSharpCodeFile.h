@@ -36,8 +36,8 @@ public:
         return *this;
     }
 
-    void writeModule(std::shared_ptr<GeneratorModule> module) override {
-        auto deps = module->getDependencies();
+    void writeModule(std::shared_ptr<Module> module) override {
+       /* auto deps = module->getDependencies();
 
         for(auto& dep : deps){
             comment("imports: " + dep->name).writeLine();
@@ -49,7 +49,7 @@ public:
             writeType(type);
         }
 
-        endScope();
+        endScope();*/
     }
 
 

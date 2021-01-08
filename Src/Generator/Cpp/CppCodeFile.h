@@ -54,21 +54,20 @@ public:
         return *this;
     }
 
-    void writeModule(std::shared_ptr<GeneratorModule> module) override {
+    void writeModule(std::shared_ptr<Module> module) override {
         _module = module;
-        auto deps = module->getDependencies();
 
-        for(auto& dep : deps){
-            comment("imports: " + dep->name).writeLine();
+        for(auto& dep : module->dependencies){
+            comment("imports: " + dep->module->name).writeLine();
         }
 
-        for(auto& type : module->getTypes()){
+        for(auto& type : module->types){
             writeType(type);
         }
 
     }
 private:
-    std::shared_ptr<GeneratorModule> _module;
+    std::shared_ptr<Module> _module;
     void writeType(std::shared_ptr<Type> type) {
         auto interfaceType = std::dynamic_pointer_cast<InterfaceType>(type);
         if(interfaceType != nullptr){

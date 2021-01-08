@@ -31,7 +31,6 @@ HEADERS += \
     Src/Generator/Cpp/CppCodeFile.h \
     Src/Generator/Cpp/CppGenerator.h \
     Src/Generator/Generator.h \
-    Src/Generator/GeneratorModule.h \
     Src/Parser/AttributeListParser.h \
     Src/Parser/AttributeParser.h \
     Src/Parser/EnumParser.h \

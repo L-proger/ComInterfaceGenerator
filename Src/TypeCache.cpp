@@ -26,6 +26,7 @@ const char* TypeCache::primitiveModuleName(){
 std::vector<std::shared_ptr<Type>> TypeCache::types;
 std::vector<std::shared_ptr<Module>> TypeCache::modules;
 std::stack<std::shared_ptr<Module>> TypeCache::moduleParseStack;
+std::vector<std::filesystem::path> searchPaths;
 
 std::shared_ptr<Module> TypeCache::findModule(std::string name) {
     auto it = std::find_if(modules.begin(), modules.end(), [name](std::shared_ptr<Module> t){  return t->name == name; });
@@ -35,6 +36,22 @@ std::shared_ptr<Module> TypeCache::findModule(std::string name) {
     return *it;
 }
 
+std::filesystem::path TypeCache::findModulePath(const std::string& name){
+    std::string ext = ".cidl";
+    std::string fileName = name + ext;
+
+    for(auto& searchPath : searchPaths){
+        auto modulePath = searchPath / fileName;
+        if(std::filesystem::exists(modulePath)){
+            return modulePath;
+        }
+    }
+    throw std::exception("Failed to find module path");
+}
+
+void TypeCache::addSearchPath(std::filesystem::path path){
+    searchPaths.push_back(path);
+}
 
 void TypeCache::init() {
     auto primitiveModule = std::make_shared<Module>();
@@ -67,8 +84,9 @@ std::shared_ptr<Module> TypeCache::resolveImport(const std::string& path){
     return parseModule(importPath.string());
 }
 
-std::shared_ptr<Module> TypeCache::parseModule(const std::string& path) {
+std::shared_ptr<Module> TypeCache::parseModule(const std::string& name) {
 
+    auto path = findModulePath(name);
     std::ifstream codeFile (path);
     if (codeFile.is_open()) {
         std::filesystem::path p(path);
@@ -90,13 +108,8 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& path) {
             CidlParser parser(&tokens);
             auto module = parser.module();
 
-            ModuleParser moduleParser(&TypeCache::resolveImport);
+            ModuleParser moduleParser(&TypeCache::resolveImport, currentModule);
             module->enterRule(&moduleParser);
-
-            currentModule->enums = moduleParser.enums;
-            currentModule->structs = moduleParser.structs;
-            currentModule->interfaces = moduleParser.interfaces;
-            currentModule->imports = moduleParser.imports;
 
             std::cout << "Module " << moduleName << " parse complete" << std::endl;
             moduleParseStack.pop();
@@ -118,23 +131,36 @@ const std::vector<std::shared_ptr<Module>>& TypeCache::getModules(){
     return modules;
 }
 
-std::shared_ptr<Type> TypeCache::findType(TypeName name) {
+std::shared_ptr<Type> TypeCache::findOrDefineReferencedType(TypeName name) {
     if(name.isPrimitive){
         name.module = primitiveModuleName();
     }
 
-    auto module = findModule(name.module);
+    //
 
 
     if(!name.isPrimitive && name.isLocalType){
         name.module = moduleParseStack.top()->name;
     }
 
+    if(!name.isLocalType && !name.isPrimitive){
+        if(findModule(name.module) == nullptr){
+            std::cout << "Parse dependent module: " << name.module << std::endl;
+            parseModule(name.module);
+        }
+    }
+
     auto it = std::find_if(types.begin(), types.end(), [name](std::shared_ptr<Type> t){  return t->name == name.name && t->moduleName == name.module; });
-    if(it == types.end()){
+    if(it != types.end()){
+        if(!name.isLocalType){
+            auto remoteModule = findModule(name.module);
+            moduleParseStack.top()->addDependency(remoteModule, *it);
+        }
+
+        return *it;
+    }else{
         throw std::runtime_error("Type not found: " + name.module + "::" + name.name);
     }
-    return *it;
 }
 
 std::shared_ptr<Type> TypeCache::findPrimitiveType(std::string name) {
@@ -143,7 +169,15 @@ std::shared_ptr<Type> TypeCache::findPrimitiveType(std::string name) {
     tn.isLocalType = false;
     tn.isPrimitive = true;
     tn.name = name;
-    return findType(tn);
+    return findOrDefineReferencedType(tn);
+}
+
+
+void TypeCache::replaceType(std::shared_ptr<Type> srcType, std::shared_ptr<Type> dstType, const std::string moduleName){
+    auto module = findModule(srcType->moduleName);
+    if(module == nullptr){
+        throw new std::runtime_error("Can not replace type. Module not found:");
+    }
 }
 
 

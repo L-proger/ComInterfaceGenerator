@@ -17,7 +17,7 @@ public:
             StructType::Field field;
             auto fieldType = TypeNameParser::parse(fieldCtx->local_or_imported_type());
             auto fieldName = TypeNameParser::parse(fieldCtx->local_type());
-            field.type = TypeCache::findType(fieldType);
+            field.type = TypeCache::findOrDefineReferencedType(fieldType);
             field.name = fieldName.name;
             result->fields.push_back(field);
         }

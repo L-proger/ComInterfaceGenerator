@@ -5,7 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <Type/Type.h>
-#include "GeneratorModule.h"
+#include <Type/Module.h>
 
 class CodeFile {
 public:
@@ -38,7 +38,7 @@ public:
         finalizeLine();
         return _text.str();
     }
-    virtual void writeModule(std::shared_ptr<GeneratorModule> module) = 0;
+    virtual void writeModule(std::shared_ptr<Module> module) = 0;
 private:
 
     void finalizeLine() {
