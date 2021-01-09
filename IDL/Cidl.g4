@@ -2,7 +2,7 @@ grammar Cidl;
 
 module
     : //empty
-    | importExprList? (interfaceDefinition | structDefinition | enumDefinition)* EOF
+    | (interfaceDefinition | structDefinition | enumDefinition)* EOF
     ;
 
 attribute
@@ -29,7 +29,6 @@ structDefinition
 enumDefinition 
     : ID_ENUM local_type (COLON integer_primitive)? LCURLY enumField (',' enumField)* RCURLY
     ;
-
 
 local_type
     : primitive
@@ -106,19 +105,6 @@ enumField
 
 interfaceInheritanceList
     : (COLON local_or_imported_type)
-    ;
-
-import_file_path
-    : STRING_LITERAL
-    ;
-
-
-importExpr
-    : ID_IMPORT import_file_path
-    ;
-
-importExprList
-    : importExpr+
     ;
 
 COMMENT
