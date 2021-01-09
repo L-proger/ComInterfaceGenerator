@@ -15,12 +15,12 @@ struct Vector3{
 //hello comment
 [Guid("5A651458-7E3C-4FE1-860D-8F75D15FBF60")]
 interface INetwork : IUnknown {
-    Vector3 update([const][in]int32& a, [in]NodeStatus b);
-    void update2([const]int8 a, float b);
+    Vector3 update([Const][In]int32& a, [In]NodeStatus b);
+    void update2([Const]int8 a, float b);
 }
 
 [Guid("6A651458-7E3C-4FE1-860D-8F75D15FBF60")]
 interface INetwork3 : IUnknown {
-    Vector3 update([const][in]int32& a, [in]NodeStatus b);
-    void update2([const]int8 a, float b);
+    Vector3 update([Const][In]int32& a, [In]NodeStatus b);
+    void update2([Const]int8 a, float b);
 }

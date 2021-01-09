@@ -27,7 +27,10 @@ HEADERS += \
     Src/Constant/StringConstant.h \
     Src/Generator/Attribute/Attribute.h \
     Src/Generator/Attribute/AttributeUtils.h \
+    Src/Generator/Attribute/ConstAttribute.h \
     Src/Generator/Attribute/GuidAttribute.h \
+    Src/Generator/Attribute/InAttribute.h \
+    Src/Generator/Attribute/OutAttribute.h \
     Src/Generator/CSharp/CSharpCodeFile.h \
     Src/Generator/CSharp/CSharpGenerator.h \
     Src/Generator/CodeFile.h \

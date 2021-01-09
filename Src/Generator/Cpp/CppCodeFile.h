@@ -292,6 +292,13 @@ private:
     }
 
     void writeAbiArg(MethodArg arg) {
+        auto attrs = AttributeList::parse(arg.attributes);
+        auto constAttr = attrs.getAttribute<ConstAttribute>();
+
+        if(constAttr != nullptr){
+            write("const ");
+        }
+
         write(fullName(arg.type->type));
         if(arg.reference){
             write("&");

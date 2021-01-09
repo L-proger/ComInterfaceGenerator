@@ -36,6 +36,6 @@ int main() {
         return -1;
     }catch(...){
         std::cerr << "Unexpected error occured" << std::endl;
-        return -1;
+        return -2;
     }
 }
