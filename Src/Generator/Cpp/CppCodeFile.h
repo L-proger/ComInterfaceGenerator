@@ -121,8 +121,13 @@ private:
     }
 
     std::string fullName(std::shared_ptr<Type> type){
-        auto result = type->moduleName + "." + type->name;
-        return replaceAll(result, ".", "::");
+        auto module = TypeCache::findModule(type->moduleName);
+        if(std::dynamic_pointer_cast<ExternalModule>(module) != nullptr){
+            return type->name;
+        }else{
+            auto result = type->moduleName + "." + type->name;
+            return replaceAll(result, ".", "::");
+        }
     }
 
 
@@ -131,16 +136,16 @@ private:
 
         ss << "{ ";
         ss << std::setfill('0') << std::hex;
-        ss << std::setw(2) << "0x" << std::setw(8) << guid.data1;
-        ss << std::setw(2) << ", ";
+        ss << "0x" << std::setw(8) << guid.data1;
+        ss << ", ";
 
-        ss << std::setw(2) << "0x" << std::setw(4) << guid.data2;
-        ss << std::setw(2) << ", ";
+        ss << "0x" << std::setw(4) << guid.data2;
+        ss << ", ";
 
-        ss << std::setw(2) << "0x" << std::setw(4) << guid.data3;
-        ss << std::setw(2) << ", ";
+        ss << "0x" << std::setw(4) << guid.data3;
+        ss << ", ";
 
-        ss << std::setw(2) << "{ ";
+        ss << "{ ";
 
         for(int i = 0; i < 8; ++i){
              ss  << "0x" << std::setw(2) << +guid.data4[i];
