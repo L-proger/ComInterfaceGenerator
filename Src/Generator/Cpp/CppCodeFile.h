@@ -8,6 +8,8 @@
 #include <Type/EnumType.h>
 #include <TypeCache.h>
 #include <unordered_map>
+#include <Generator/Attribute/AttributeUtils.h>
+#include <sstream>
 
 class CppCodeFile : public CodeFile {
 public:
@@ -123,6 +125,33 @@ private:
         return replaceAll(result, ".", "::");
     }
 
+
+    std::string guidToCode(ComInterfaceGenerator::Guid guid) {
+        std::stringstream ss;
+
+        ss << "{ ";
+        ss << std::setfill('0') << std::hex;
+        ss << std::setw(2) << "0x" << std::setw(8) << guid.data1;
+        ss << std::setw(2) << ", ";
+
+        ss << std::setw(2) << "0x" << std::setw(4) << guid.data2;
+        ss << std::setw(2) << ", ";
+
+        ss << std::setw(2) << "0x" << std::setw(4) << guid.data3;
+        ss << std::setw(2) << ", ";
+
+        ss << std::setw(2) << "{ ";
+
+        for(int i = 0; i < 8; ++i){
+             ss  << "0x" << std::setw(2) << +guid.data4[i];
+             if(i != 7){
+                ss << ", ";
+             }
+        }
+        ss << " } }";
+        return ss.str();
+    }
+
     void writeInterface(std::shared_ptr<InterfaceType> type) {
         beginNamespaceScope(_module->name);
         //Tag declaration
@@ -146,7 +175,11 @@ private:
             write("using Base = InterfaceAbi<").write(fullName(baseInterfaceType->type)).writeLine(">;");\
         }
 
-        //TODO: write ID()
+        //Write ID()
+        auto attrs = AttributeList::parse(type->attributes);
+        auto guids = attrs.getAttributes<GuidAttribute>();
+        comment("{" + guids[0]->guid.toString() + "}").writeLine();
+        write("static constexpr InterfaceID ID() { return ").write(guidToCode(guids[0]->guid)).writeLine("; }");
 
         //Write abi methods
         for(auto& method : type->methods){

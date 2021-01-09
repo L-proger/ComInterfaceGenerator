@@ -110,8 +110,7 @@ std::shared_ptr<Module> TypeCache::parseModule(const std::string& name) {
             return findModule(moduleName);
         }
     }else{
-        std::cerr << "Failed to read code file!" << std::endl;
-        throw std::runtime_error("Module parsing failed");
+        throw std::runtime_error("Failed to read code file");
     }
 }
 
