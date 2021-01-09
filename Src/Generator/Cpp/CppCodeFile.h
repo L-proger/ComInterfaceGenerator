@@ -225,7 +225,20 @@ private:
         //Write remap methods
         for(auto& method : type->methods){
             writeAbiMethodDeclaration(method);
-            write(" { return {};/*TODO: implement in generator*/");
+            write(" { return this->implementer()->");
+            write(method.name);
+            write("(");
+
+
+            auto args = getAbiMethodArgs(method);
+            for(std::size_t i = 0; i < args.size(); ++i){
+                write(args[i].name);
+                if(i < args.size() - 1){
+                    write(", ");
+                }
+            }
+            write(");");
+
             writeLine(" }");
         }
 
@@ -239,6 +252,7 @@ private:
         beginScope(type->name);
         for(auto& field : type->fields){
             writeStructField(field);
+
         }
         endScope(";");
         endScope();
@@ -264,27 +278,30 @@ private:
         write(field.name).write(" = ").write(field.value->toString()).writeLine(",");
     }
 
-    void writeAbiMethodDeclaration(MethodDesc desc){
-        write("virtual Result ").write(desc.name).write("(");
-        for(std::size_t i = 0; i < desc.args.size(); ++i){
-            writeAbiArg(desc.args[i]);
-            if(desc.returnType->type->name == "void"){
-                if(i < desc.args.size() - 1){
-                     write(", ");
-                }
-            }else{
-                write(", ");
-            }
-        }
-
-        if(desc.returnType->type->name != "void"){
+    std::vector<MethodArg> getAbiMethodArgs(MethodDesc& method){
+        std::vector<MethodArg> result;
+        result.insert(result.begin(), method.args.begin(), method.args.end());
+        if(method.returnType->type->name != "void"){
             MethodArg arg;
             arg.name = "result";
             arg.reference = true;
-            arg.type = desc.returnType;
-            writeAbiArg(arg);
+            arg.type = method.returnType;
+            result.push_back(arg);
         }
-         write(")");
+        return result;
+    }
+
+    void writeAbiMethodDeclaration(MethodDesc desc){
+        write("virtual Result LFRAMEWORK_COM_CALL ").write(desc.name).write("(");
+        auto args = getAbiMethodArgs(desc);
+
+        for(std::size_t i = 0; i < args.size(); ++i){
+            writeAbiArg(args[i]);
+            if(i < args.size() - 1){
+                write(", ");
+            }
+        }
+        write(")");
     }
     void writeAbiMethod(MethodDesc desc) {
         writeAbiMethodDeclaration(desc);
