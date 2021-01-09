@@ -8,12 +8,13 @@
 #include <Generator/ExternalModule.h>
 #include <Generator/Attribute/AttributeUtils.h>
 #include <unordered_map>
+#include <fstream>
 
 class Generator {
 public:
-    Generator(const std::string& outputPath) : _outputPath(outputPath){
+    Generator(){
     }
-    void generate() {
+    void generate(const std::filesystem::path& outputPath) {
         auto allModules = TypeCache::getModules();
 
         //filter only generatable modules
@@ -28,12 +29,27 @@ public:
         //validate interfaces
         validateInterfaces(findAllInterfaces(generateModules));
 
+
+        std::filesystem::create_directories(outputPath);
+
+
         //generate outputs
         for(auto& module : generateModules){
-            auto file = createCodeFile();
-            file->writeModule(module);
-            std::cout << "### File: " << module->name << std::endl;
-            std::cout << file->toString() << std::endl;
+            auto codeFile = createCodeFile();
+            codeFile->writeModule(module);
+
+            auto fileName = codeFile->getFileName(module);
+            auto filePath = outputPath / fileName;
+
+            auto code = codeFile->toString();
+
+            std::ofstream file;
+            file.open(filePath, std::ios::binary | std::ios::out);
+            file.write((char*) code.data(), code.size());
+            file.close();
+
+            std::cout << "Generating file: " << filePath << std::endl;
+           // std::cout << file->toString() << std::endl;
         }
     }
 protected:
@@ -124,5 +140,4 @@ protected:
     }
 
     virtual std::shared_ptr<CodeFile> createCodeFile() = 0;
-    std::string _outputPath;
 };

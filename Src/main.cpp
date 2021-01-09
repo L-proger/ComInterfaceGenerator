@@ -22,8 +22,9 @@ void run() {
 
     auto attributes = AttributeList::parse(inetwork->attributes);
 
-    CppGenerator gen("ololo");
-    gen.generate();
+    auto outputPath = srcPath / "GeneratedApi";
+    CppGenerator generator;
+    generator.generate(outputPath);
 }
 
 int main() {

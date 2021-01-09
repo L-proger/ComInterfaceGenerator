@@ -7,7 +7,7 @@
 
 class CSharpGenerator : public Generator {
 public:
-    CSharpGenerator(const std::string& outputPath) : Generator(outputPath){
+    CSharpGenerator() : Generator(){
 
     }
 

@@ -11,6 +11,10 @@ public:
 
     }
 
+    std::string getFileName(std::shared_ptr<Module> module) override {
+        return module->name + ".cs";
+    }
+
     CSharpCodeFile& beginNamespaceScope(std::string name) {
         write("namespace " + name);
         beginScope(name);

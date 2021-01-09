@@ -6,7 +6,7 @@
 
 class CppGenerator : public Generator {
 public:
-    CppGenerator(const std::string& outputPath) : Generator(outputPath){
+    CppGenerator() : Generator(){
         auto primitiveModule = TypeCache::findModule(TypeCache::primitiveModuleName());
 
         //replace integer types

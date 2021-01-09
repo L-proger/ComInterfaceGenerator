@@ -40,6 +40,8 @@ public:
         return _text.str();
     }
     virtual void writeModule(std::shared_ptr<Module> module) = 0;
+
+    virtual std::string getFileName(std::shared_ptr<Module> module) = 0;
 private:
 
     void finalizeLine() {
