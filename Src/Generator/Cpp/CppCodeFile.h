@@ -76,6 +76,7 @@ public:
     void writeModule(std::shared_ptr<Module> module) override {
         _module = module;
 
+        writeLine("#pragma once");
         auto importedModules = getImportedModules(module);
 
         for(auto& dep : module->importedTypes){
@@ -316,9 +317,16 @@ private:
             write("const ");
         }
 
-        write(fullName(arg.type->type));
         if(arg.reference){
-            write("&");
+            write(fullName(arg.type->type));
+            if(arg.type->type->name == "void"){
+                write("*");
+            }else{
+                write("&");
+            }
+
+        }else{
+            write(fullName(arg.type->type));
         }
         write(" ");
         write(arg.name);
