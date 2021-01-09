@@ -1,6 +1,8 @@
 TEMPLATE = app
 CONFIG += console c++17
 
+include($$PWD/Dependencies/CommandLine/CommandLine.pri)
+
 INCLUDEPATH += $$PWD/Src \
     $$PWD/generated \
     $$PWD/antlr/runtime
@@ -16,7 +18,14 @@ SOURCES += \
 DEFINES += SRC_DIR="\\\"$$PWD\\\"" \
     ANTLR4CPP_STATIC
 
-LIBS += -L"$$PWD/antlr/lib/vs-2019/x64/Debug Static"  -lantlr4-runtime  -lUser32 -lAdvapi32 -lOle32 -lWinusb -lSetupAPI
+
+CONFIG(debug, debug|release) {
+   LIBS += -L"$$PWD/antlr/lib/vs-2019/x64/Debug Static"
+} else {
+   LIBS += -L"$$PWD/antlr/lib/vs-2019/x64/Release Static"
+}
+
+LIBS += -lantlr4-runtime
 
 HEADERS += \
     Src/Constant/Constant.h \

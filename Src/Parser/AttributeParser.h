@@ -21,14 +21,14 @@ public:
                 auto expr = argCtx->expression();
                 if(expr != nullptr){
                     if(expr->STRING_LITERAL() != nullptr){
-                        result->arguments.push_back(std::make_shared<StringConstant>(TypeCache::findPrimitiveType("string")->type, expr->getText()));
+                        result->arguments.push_back(std::make_shared<StringConstant>(TypeCache::findPrimitiveType("string", false)->type, expr->getText()));
                     }else{
                         auto numeric = expr->numeric_literal();
                         if(numeric->float_literal() != nullptr){
                             if(numeric->float_literal()->FLOAT_SUFFIX() != nullptr){
-                                result->arguments.push_back(std::make_shared<FloatConstant>(TypeCache::findPrimitiveType("float")->type, expr->getText()));
+                                result->arguments.push_back(std::make_shared<FloatConstant>(TypeCache::findPrimitiveType("float", false)->type, expr->getText()));
                             }else{
-                                result->arguments.push_back(std::make_shared<DoubleConstant>(TypeCache::findPrimitiveType("double")->type, expr->getText()));
+                                result->arguments.push_back(std::make_shared<DoubleConstant>(TypeCache::findPrimitiveType("double", false)->type, expr->getText()));
                             }
                         }else if(numeric->HEX_LITERAL() != nullptr){
                             throw std::runtime_error("Not implemented");

@@ -16,8 +16,8 @@ public:
     static void init();
 
     static std::shared_ptr<Module> parseModule(const std::string& name);
-    static std::shared_ptr<TypeRef> findPrimitiveType(std::string name);
-    static std::shared_ptr<TypeRef> findOrDefineReferencedType(TypeName name);
+    static std::shared_ptr<TypeRef> findPrimitiveType(std::string name, bool addToModuleReferences = true);
+    static std::shared_ptr<TypeRef> findOrDefineReferencedType(TypeName name, bool addToModuleReferences = true);
     static void addSearchPath(std::filesystem::path path);
     static std::filesystem::path findModulePath(const std::string& name);
     static std::shared_ptr<Module> findModule(std::string name);

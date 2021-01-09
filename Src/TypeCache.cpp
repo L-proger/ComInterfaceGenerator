@@ -118,7 +118,7 @@ const std::vector<std::shared_ptr<Module>>& TypeCache::getModules(){
     return modules;
 }
 
-std::shared_ptr<TypeRef> TypeCache::findOrDefineReferencedType(TypeName name) {
+std::shared_ptr<TypeRef> TypeCache::findOrDefineReferencedType(TypeName name, bool addToModuleReferences) {
     if(name.isPrimitive){
         name.module = primitiveModuleName();
     }
@@ -144,7 +144,9 @@ std::shared_ptr<TypeRef> TypeCache::findOrDefineReferencedType(TypeName name) {
             throw std::runtime_error("Type not found: " + name.module + "::" + name.name);
         }else{
             if(name.isPrimitive || !name.isLocalType){
-                moduleParseStack.top()->addImportedType(t);
+                if(addToModuleReferences){
+                    moduleParseStack.top()->addImportedType(t);
+                }
             }else{
                 //std::cout << "Skip local dep: " << name.name << std::endl;
             }
@@ -153,13 +155,13 @@ std::shared_ptr<TypeRef> TypeCache::findOrDefineReferencedType(TypeName name) {
     }
 }
 
-std::shared_ptr<TypeRef> TypeCache::findPrimitiveType(std::string name) {
+std::shared_ptr<TypeRef> TypeCache::findPrimitiveType(std::string name, bool addToModuleReferences) {
     TypeName tn;
     tn.module = primitiveModuleName();
     tn.isLocalType = false;
     tn.isPrimitive = true;
     tn.name = name;
-    return findOrDefineReferencedType(tn);
+    return findOrDefineReferencedType(tn, addToModuleReferences);
 }
 
 

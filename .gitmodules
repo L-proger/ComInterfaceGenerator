@@ -1,0 +1,3 @@
+[submodule "Dependencies/CommandLine"]
+	path = Dependencies/CommandLine
+	url = https://github.com/L-proger/CommandLine.git
