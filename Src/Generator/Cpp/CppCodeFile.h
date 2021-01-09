@@ -166,8 +166,15 @@ private:
 
         //Lframework types specialization
         beginNamespaceScope("LFramework");
+        writeInterfaceAbi(type);
+        writeInterfaceRemap(type);
+        endScope(); //LFramework
+        //struct InterfaceAbi<MicroNetwork::Host::INetwork> : public InterfaceAbi<IUnknown> {
+    }
 
+    void writeInterfaceAbi(std::shared_ptr<InterfaceType> type) {
         //Write ABI
+        comment("Interface ABI").writeLine();
         writeLine("template<>");
 
         write("struct ").write("InterfaceAbi<").write(fullName(type)).write(">");
@@ -191,9 +198,34 @@ private:
             writeAbiMethod(method);
         }
 
+        //Delete destructor
+        unident().write("private:").ident().writeLine().writeLine("~InterfaceAbi() = delete;");
+
         endScope(";"); //ABI
-        endScope(); //LFramework
-        //struct InterfaceAbi<MicroNetwork::Host::INetwork> : public InterfaceAbi<IUnknown> {
+    }
+
+    void writeInterfaceRemap(std::shared_ptr<InterfaceType> type) {
+        comment("Interface Remap").writeLine();
+        writeLine("template<class TImplementer>");
+        auto baseInterfaceType = std::dynamic_pointer_cast<InterfaceType>(type)->baseInterfaceType;
+        write("struct InterfaceRemap<")
+                .write(fullName(type))
+                .write(", TImplementer> : public InterfaceRemap<")
+                .write(fullName(baseInterfaceType->type))
+                .write(", TImplementer>");
+
+        beginScope("Remap");
+
+        //unident().write("public:").ident().writeLine();
+
+        //Write remap methods
+        for(auto& method : type->methods){
+            writeAbiMethodDeclaration(method);
+            write(" { return {};/*TODO: implement in generator*/");
+            writeLine(" }");
+        }
+
+        endScope(";");
     }
 
     void writeStruct(std::shared_ptr<StructType> type) {
@@ -228,7 +260,7 @@ private:
         write(field.name).write(" = ").write(field.value->toString()).writeLine(",");
     }
 
-    void writeAbiMethod(MethodDesc desc) {
+    void writeAbiMethodDeclaration(MethodDesc desc){
         write("virtual Result ").write(desc.name).write("(");
         for(std::size_t i = 0; i < desc.args.size(); ++i){
             writeAbiArg(desc.args[i]);
@@ -248,8 +280,11 @@ private:
             arg.type = desc.returnType;
             writeAbiArg(arg);
         }
-
-        writeLine(") = 0;");
+         write(")");
+    }
+    void writeAbiMethod(MethodDesc desc) {
+        writeAbiMethodDeclaration(desc);
+        writeLine(" = 0;");
     }
 
     void writeAbiArg(MethodArg arg) {
