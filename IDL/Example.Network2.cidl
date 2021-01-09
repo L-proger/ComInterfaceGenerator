@@ -2,6 +2,6 @@
 [Guid("6B751459-0E3C-4FE1-860D-8F75D15FBF66")]
 interface INetwork2 : Example.Network.INetwork {
     void getNodeStatus(Example.Network.NodeStatus status, int32 nodeId);
-	void getNodeStatus2(Example.Network.NodeStatus status);
+	Example.Network.NodeStatus getNodeStatus2(int8 nodes);
 }
 

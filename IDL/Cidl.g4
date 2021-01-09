@@ -56,6 +56,10 @@ reference_type_name
     : local_or_imported_type '&'
     ;
 
+array_type
+    : local_or_imported_type '[]'
+    ;
+
 method_name: local_type;
 
 expression
@@ -89,14 +93,20 @@ argument_list
 method_parameter
     : attribute_list? local_or_imported_type local_type
     | attribute_list? reference_type_name local_type
+    | attribute_list? array_type local_type
     ;
 
 method_parameter_list
     : method_parameter (',' method_parameter)*
     ;
 
+method_return_type
+    : array_type 
+    | local_or_imported_type
+    ;
+
 method
-    : local_or_imported_type method_name LEFT_BRACKET method_parameter_list? RIGHT_BRACKET SEMICOLON
+    : method_return_type method_name LEFT_BRACKET method_parameter_list? RIGHT_BRACKET SEMICOLON
     ;
 
 enumField 

@@ -10,7 +10,7 @@ public:
 
     void enterMethod(CidlParser::MethodContext* ctx) override {
         result.name = ctx->method_name()->getText();
-        result.returnType = TypeCache::findOrDefineReferencedType(TypeNameParser::parse(ctx->local_or_imported_type()));
+        result.returnType = TypeCache::findOrDefineReferencedType(TypeNameParser::parse(ctx->method_return_type()));
 
 
         auto paramList = ctx->method_parameter_list();

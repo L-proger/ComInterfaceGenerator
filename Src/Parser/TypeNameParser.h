@@ -7,6 +7,7 @@ struct TypeName {
     std::string name;
     bool isLocalType = true;
     bool isPrimitive = false;
+    bool isArray = false;
 };
 
 namespace TypeNameParser {
@@ -38,5 +39,20 @@ inline TypeName parse(CidlParser::Local_or_imported_typeContext* ctx){
         return parse(ctx->imported_type());
     }
 }
+
+inline TypeName parse(CidlParser::Array_typeContext* ctx){
+    auto result = parse(ctx->local_or_imported_type());
+    result.isArray = true;
+    return result;
+}
+
+inline TypeName parse(CidlParser::Method_return_typeContext* ctx){
+    if(ctx->array_type() != nullptr){
+        return parse(ctx->array_type());
+    }else{
+        return parse(ctx->local_or_imported_type());
+    }
+}
+//
 
 }
