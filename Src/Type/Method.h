@@ -16,4 +16,8 @@ public:
     std::string name;
     std::shared_ptr<TypeRef> returnType;
     std::vector<MethodArg> args;
+
+    bool returnsValue() const {
+        return returnType->type->name != "void";
+    }
 };

@@ -135,6 +135,10 @@ private:
         }
     }
 
+    std::string fullName(std::shared_ptr<TypeRef> type){
+        return fullName(type->type);
+    }
+
 
     std::string guidToCode(ComInterfaceGenerator::Guid guid) {
         std::stringstream ss;
@@ -255,8 +259,10 @@ private:
         unident().write("public:").ident().writeLine();
 
         for(auto& method : type->methods){
-            write(fullName(method.returnType->type)).write(" ").write(method.name).write("(");
+            //return type
+            write(fullName(method.returnType)).write(" ").write(method.name).write("(");
 
+            //wethod args
             for(std::size_t i = 0; i < method.args.size(); ++i){
                 writeAbiArg(method.args[i]);
                 if(i < method.args.size() - 1){
@@ -264,7 +270,14 @@ private:
                 }
             }
             write(")");
-            beginScope(method.name);
+            beginScope(method.name); //Method body
+
+            //Call
+
+            //declare result variable
+            if(method.returnsValue()){
+                write(fullName(method.returnType)).writeLine(" result;");
+            }
 
             write("auto comCallResult = _abi->").write(method.name).write("(");
             for(std::size_t i = 0; i < method.args.size(); ++i){
@@ -273,15 +286,25 @@ private:
                     write(", ");
                 }
             }
-            writeLine(");");
+
+            if(method.returnsValue()){
+                write(", result");
+            }
+
+            writeLine(");"); //Call end
 
             write("if(comCallResult != Result::Ok)");
+
             beginScope("");
             writeLine("throw ComException(comCallResult);");
-
             endScope();
 
-            endScope();
+
+            if(method.returnsValue()){
+                writeLine("return result;");
+            }
+
+            endScope(); //End method body
         }
 
         unident().write("private:").ident().writeLine();
