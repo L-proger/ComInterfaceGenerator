@@ -173,6 +173,7 @@ private:
         beginNamespaceScope("LFramework");
         writeInterfaceAbi(type);
         writeInterfaceRemap(type);
+        writeInterfaceWrapper(type);
         endScope(); //LFramework
         //struct InterfaceAbi<MicroNetwork::Host::INetwork> : public InterfaceAbi<IUnknown> {
     }
@@ -242,6 +243,49 @@ private:
 
             writeLine(" }");
         }
+
+        endScope(";");
+    }
+
+    void writeInterfaceWrapper(std::shared_ptr<InterfaceType> type) {
+        comment("Interface Wrapper").writeLine();
+        writeLine("template<>");
+        write("class LFramework::InterfaceWrapper<").write(fullName(type)).write(">");
+        beginScope("Interface Wrapper");
+        unident().write("public:").ident().writeLine();
+
+        for(auto& method : type->methods){
+            write(fullName(method.returnType->type)).write(" ").write(method.name).write("(");
+
+            for(std::size_t i = 0; i < method.args.size(); ++i){
+                writeAbiArg(method.args[i]);
+                if(i < method.args.size() - 1){
+                    write(", ");
+                }
+            }
+            write(")");
+            beginScope(method.name);
+
+            write("auto comCallResult = _abi->").write(method.name).write("(");
+            for(std::size_t i = 0; i < method.args.size(); ++i){
+                write(method.args[i].name);
+                if(i < method.args.size() - 1){
+                    write(", ");
+                }
+            }
+            writeLine(");");
+
+            write("if(comCallResult != Result::Ok)");
+            beginScope("");
+            writeLine("throw ComException(comCallResult);");
+
+            endScope();
+
+            endScope();
+        }
+
+        unident().write("private:").ident().writeLine();
+        write("InterfaceAbi<").write(fullName(type)).writeLine(">* _abi;");
 
         endScope(";");
     }
