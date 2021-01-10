@@ -111,7 +111,7 @@ protected:
                     std::cerr << "Multiple methods with the same name were found in the interface \"" << i->moduleName << "." << i->name << "\" :" << std::endl;
                     for(std::size_t i = 0; i < record.second.size(); ++i){
                         auto& m = record.second[i];
-                        std::cerr << "\t" << m.returnType->type->name << " " << m.name << "(";
+                        std::cerr << "\t" << m.returnType.type->type->name << " " << m.name << "(";
 
                         for(std::size_t j = 0; j < m.args.size(); ++j){
 

@@ -156,6 +156,7 @@ primitive
     | 'float'
     | 'void'
     | 'IUnknown'
+    | 'string'
     ;
 
 integer_primitive 

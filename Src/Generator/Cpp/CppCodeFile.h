@@ -17,6 +17,7 @@ public:
 
     }
 
+
     std::string getFileName(std::shared_ptr<Module> module) override {
         return module->name + ".h";
     }
@@ -70,8 +71,6 @@ public:
         }
         return references;
     }
-
-
 
     void writeModule(std::shared_ptr<Module> module) override {
         _module = module;
@@ -260,11 +259,14 @@ private:
 
         for(auto& method : type->methods){
             //return type
-            write(fullName(method.returnType)).write(" ").write(method.name).write("(");
+            //
+            writeWrapperArg(method.returnType, true);
+            write(" ").write(method.name).write("(");
+            //write(fullName(method.returnType.type)).write(" ").write(method.name).write("(");
 
             //wethod args
             for(std::size_t i = 0; i < method.args.size(); ++i){
-                writeAbiArg(method.args[i]);
+                writeWrapperArg(method.args[i]);
                 if(i < method.args.size() - 1){
                     write(", ");
                 }
@@ -276,7 +278,7 @@ private:
 
             //declare result variable
             if(method.returnsValue()){
-                write(fullName(method.returnType)).writeLine(" result;");
+                write(fullName(method.returnType.type)).writeLine(" result;");
             }
 
             write("auto comCallResult = _abi->").write(method.name).write("(");
@@ -349,12 +351,8 @@ private:
     std::vector<MethodArg> getAbiMethodArgs(MethodDesc& method){
         std::vector<MethodArg> result;
         result.insert(result.begin(), method.args.begin(), method.args.end());
-        if(method.returnType->type->name != "void"){
-            MethodArg arg;
-            arg.name = "result";
-            arg.reference = true;
-            arg.type = method.returnType;
-            result.push_back(arg);
+        if(method.returnsValue()){
+            result.push_back(method.returnType);
         }
         return result;
     }
@@ -376,25 +374,64 @@ private:
         writeLine(" = 0;");
     }
 
+    void writeWrapperArg(MethodArg arg, bool returnType = false) {
+        auto attrs = AttributeList::parse(arg.attributes);
+        auto constAttr = attrs.getAttribute<ConstAttribute>();
+        auto outAttr = attrs.getAttribute<OutAttribute>();
+
+        if(arg.array){
+            if(outAttr != nullptr){
+                write("std::vector<").write(fullName(arg.type)).write(">");
+            }else{
+                write("const std::vector<").write(fullName(arg.type)).write(">");
+            }
+            if(!returnType){
+                write("&");
+            }
+        }else{
+            if(constAttr != nullptr){
+                write("const ");
+            }
+            write(fullName(arg.type->type));
+            if(arg.reference){
+                if(arg.type->type->name == "void"){
+                    write("*");
+                }else{
+                    write("&");
+                }
+            }
+        }
+
+        write(" ");
+        write(arg.name);
+    }
+
+
     void writeAbiArg(MethodArg arg) {
         auto attrs = AttributeList::parse(arg.attributes);
         auto constAttr = attrs.getAttribute<ConstAttribute>();
+        auto outAttr = attrs.getAttribute<OutAttribute>();
 
-        if(constAttr != nullptr){
-            write("const ");
-        }
-
-        if(arg.reference){
-            write(fullName(arg.type->type));
-            if(arg.type->type->name == "void"){
-                write("*");
+        if(arg.array || arg.type->type->name == "std::string"){
+            if(outAttr != nullptr){
+                write("LFramework::ArrayOutMarshaler");
             }else{
-                write("&");
+                write("LFramework::ArrayInMarshaler");
             }
-
         }else{
+            if(constAttr != nullptr){
+                write("const ");
+            }
             write(fullName(arg.type->type));
+            if(arg.reference){
+                if(arg.type->type->name == "void"){
+                    write("*");
+                }else{
+                    write("&");
+                }
+            }
         }
+
         write(" ");
         write(arg.name);
     }

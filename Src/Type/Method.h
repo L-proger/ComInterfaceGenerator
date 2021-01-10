@@ -9,15 +9,16 @@ public:
     std::vector<std::shared_ptr<AttributeType>> attributes;
     std::shared_ptr<TypeRef> type;
     bool reference = false;
+    bool array = false;
 };
 
 class MethodDesc {
 public:
     std::string name;
-    std::shared_ptr<TypeRef> returnType;
+    MethodArg returnType;
     std::vector<MethodArg> args;
 
     bool returnsValue() const {
-        return returnType->type->name != "void";
+        return returnType.type->type->name != "void";
     }
 };
