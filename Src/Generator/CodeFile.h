@@ -39,6 +39,14 @@ public:
         finalizeLine();
         return _text.str();
     }
+
+    CodeFile& space(std::size_t count = 1){
+        for(std::size_t i = 0; i < count; ++i){
+            write(" ");
+            return *this;
+        }
+    }
+
     virtual void writeModule(std::shared_ptr<Module> module) = 0;
 
     virtual std::string getFileName(std::shared_ptr<Module> module) = 0;

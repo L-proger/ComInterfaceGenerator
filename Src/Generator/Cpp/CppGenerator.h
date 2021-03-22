@@ -33,6 +33,9 @@ public:
 
         auto comCoreModule = TypeCache::addModule<ExternalModule>("LFramework/COM/ComObject.h");
         TypeCache::replaceType(primitiveModule->findType("IUnknown"), comCoreModule->addNewType("LFramework::IUnknown"));
+
+        auto guidModule = TypeCache::addModule<ExternalModule>("LFramework/Guid.h");
+        TypeCache::replaceType(primitiveModule->findType("Guid"), guidModule->addNewType("LFramework::Guid"));
     }
 
     std::shared_ptr<CodeFile> createCodeFile() override {

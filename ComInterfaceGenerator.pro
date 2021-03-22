@@ -45,6 +45,7 @@ HEADERS += \
     Src/Generator/CodeFile.h \
     Src/Generator/Cpp/CppCodeFile.h \
     Src/Generator/Cpp/CppGenerator.h \
+    Src/Generator/Cpp/CppMarshaler.h \
     Src/Generator/ExternalModule.h \
     Src/Generator/Generator.h \
     Src/Generator/Guid.h \

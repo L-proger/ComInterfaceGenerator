@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <Generator/Attribute/AttributeUtils.h>
 #include <sstream>
+#include <Generator/Cpp/CppMarshaler.h>
 
 class CppCodeFile : public CodeFile {
 public:
@@ -227,27 +228,60 @@ private:
 
         //unident().write("public:").ident().writeLine();
 
+
+
+
         //Write remap methods
         for(auto& method : type->methods){
             writeAbiMethodDeclaration(method);
-            write(" { return this->implementer()->");
+            beginScope("");
+
+            write("try");
+            beginScope("");
+
+
+            if(method.returnsValue()){
+                write("result = this->implementer()->");
+            }else{
+                write("this->implementer()->");
+            }
+
+
+
+
             write(method.name);
             write("(");
 
 
-            auto args = getAbiMethodArgs(method);
+            auto args = getAbiMethodArgs(method, false);
             for(std::size_t i = 0; i < args.size(); ++i){
                 write(args[i].name);
                 if(i < args.size() - 1){
                     write(", ");
                 }
             }
-            write(");");
+            writeLine(");");
 
-            writeLine(" }");
+
+            endScope(); //end try
+            write("catch(...)");
+            beginScope("");
+                writeLine("return LFramework::Result::UnknownFailure;");
+            endScope(); //end catch
+
+            writeLine("return LFramework::Result::Ok;");
+            endScope();
+            //writeLine(" }");
         }
 
         endScope(";");
+
+
+    }
+
+    void writeInterfaceWrapperArgMarshaler(const MethodArg& arg, bool methodResult) {
+        std::string varName = methodResult ? "result" : arg.name;
+        write(CppMarshaler::getMarshalerType(arg)).space().write(CppMarshaler::getVariableName(varName)).write("(").write(varName).writeLine(");");
     }
 
     void writeInterfaceWrapper(std::shared_ptr<InterfaceType> type) {
@@ -264,7 +298,7 @@ private:
             write(" ").write(method.name).write("(");
             //write(fullName(method.returnType.type)).write(" ").write(method.name).write("(");
 
-            //wethod args
+            //method args
             for(std::size_t i = 0; i < method.args.size(); ++i){
                 writeWrapperArg(method.args[i]);
                 if(i < method.args.size() - 1){
@@ -278,19 +312,47 @@ private:
 
             //declare result variable
             if(method.returnsValue()){
-                write(fullName(method.returnType.type)).writeLine(" result;");
+                if(method.returnType.array){
+                    write("std::vector<").write(fullName(method.returnType.type)).write(">").writeLine(" result;");
+                }else{
+                    write(fullName(method.returnType.type)).writeLine(" result;");
+                }
+
+                //marshal result
+                if(CppMarshaler::shouldMarshal(method.returnType)){
+                    writeInterfaceWrapperArgMarshaler(method.returnType, true);
+                }
             }
+
+            //marshal args
+            for(std::size_t i = 0; i < method.args.size(); ++i){
+                if(CppMarshaler::shouldMarshal(method.args[i])){
+                    writeInterfaceWrapperArgMarshaler(method.args[i], false);
+                }
+            }
+
+
 
             write("auto comCallResult = _abi->").write(method.name).write("(");
             for(std::size_t i = 0; i < method.args.size(); ++i){
-                write(method.args[i].name);
+                if(CppMarshaler::shouldMarshal(method.args[i])){
+                    write(CppMarshaler::getVariableName(method.args[i].name));
+                }else{
+                    write(method.args[i].name);
+                }
+
                 if(i < method.args.size() - 1){
                     write(", ");
                 }
             }
 
             if(method.returnsValue()){
-                write(", result");
+                 if(CppMarshaler::shouldMarshal(method.returnType)){
+                     write(", ").write(CppMarshaler::getVariableName("result"));
+                 }else{
+                     write(", result");
+                 }
+
             }
 
             writeLine(");"); //Call end
@@ -348,10 +410,10 @@ private:
         write(field.name).write(" = ").write(field.value->toString()).writeLine(",");
     }
 
-    std::vector<MethodArg> getAbiMethodArgs(MethodDesc& method){
+    std::vector<MethodArg> getAbiMethodArgs(MethodDesc& method, bool includeResultType = true){
         std::vector<MethodArg> result;
         result.insert(result.begin(), method.args.begin(), method.args.end());
-        if(method.returnsValue()){
+        if(includeResultType && method.returnsValue()){
             result.push_back(method.returnType);
         }
         return result;
@@ -410,14 +472,9 @@ private:
     void writeAbiArg(MethodArg arg) {
         auto attrs = AttributeList::parse(arg.attributes);
         auto constAttr = attrs.getAttribute<ConstAttribute>();
-        auto outAttr = attrs.getAttribute<OutAttribute>();
 
-        if(arg.array || arg.type->type->name == "std::string"){
-            if(outAttr != nullptr){
-                write("LFramework::ArrayOutMarshaler");
-            }else{
-                write("LFramework::ArrayInMarshaler");
-            }
+        if(CppMarshaler::shouldMarshal(arg)){
+            write(CppMarshaler::getMarshalerType(arg));
         }else{
             if(constAttr != nullptr){
                 write("const ");

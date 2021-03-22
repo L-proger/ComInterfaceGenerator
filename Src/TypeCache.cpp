@@ -71,6 +71,7 @@ void TypeCache::init() {
     TypeCache::makePrimitiveType<InterfaceType>("IUnknown");
     TypeCache::makePrimitiveType<Type>("string");
     TypeCache::makePrimitiveType<Type>("void");
+    TypeCache::makePrimitiveType<Type>("Guid");
 }
 
 

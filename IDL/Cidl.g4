@@ -157,6 +157,7 @@ primitive
     | 'void'
     | 'IUnknown'
     | 'string'
+	| 'Guid'
     ;
 
 integer_primitive 
