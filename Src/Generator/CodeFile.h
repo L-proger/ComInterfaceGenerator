@@ -43,8 +43,9 @@ public:
     CodeFile& space(std::size_t count = 1){
         for(std::size_t i = 0; i < count; ++i){
             write(" ");
-            return *this;
+          
         }
+        return *this;
     }
 
     virtual void writeModule(std::shared_ptr<Module> module) = 0;

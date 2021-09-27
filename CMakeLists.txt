@@ -13,8 +13,8 @@ set_property(TARGET ComInterfaceGenerator PROPERTY
   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 target_include_directories(ComInterfaceGenerator 
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/generated/"
-	PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/antlr/runtime/"
+	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/generated/"
+	PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/antlr/runtime/"
 )
 
 
@@ -26,6 +26,7 @@ target_sources(ComInterfaceGenerator
 		generated/CidlParser.cpp
 )
 
+target_compile_definitions(ComInterfaceGenerator PRIVATE ANTLR4CPP_STATIC)
 
 target_link_libraries(ComInterfaceGenerator PRIVATE CommandLine)
-target_link_libraries(ComInterfaceGenerator PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/antlr/lib/Debug/antlr4-runtime-static.lib")
+target_link_libraries(ComInterfaceGenerator PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/antlr/lib/$<IF:$<CONFIG:Debug>,Debug,Release>/antlr4-runtime-static.lib")
