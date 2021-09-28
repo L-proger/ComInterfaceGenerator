@@ -464,8 +464,11 @@ private:
             }
         }
 
-        write(" ");
-        write(arg.name);
+       
+        if (!returnType) {
+            write(" ");
+            write(arg.name);
+        }
     }
 
 

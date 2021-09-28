@@ -14,6 +14,7 @@ public:
         //Parse return type
         MethodArg returnType;
         returnType.name = "result";
+
         returnType.reference = true;
         auto t = std::make_shared<AttributeType>();
         t->name = "Out";
@@ -25,6 +26,11 @@ public:
             returnType.type = TypeCache::findOrDefineReferencedType(TypeNameParser::parse(ctx->method_return_type()->local_or_imported_type()));
             returnType.array = false;
         }
+
+        if (returnType.type->type->name == "void") {
+            returnType.reference = false;
+        }
+
 
         result.returnType = returnType;
 
