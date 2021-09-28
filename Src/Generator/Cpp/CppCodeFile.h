@@ -255,7 +255,10 @@ private:
 
             auto args = getAbiMethodArgs(method, false);
             for(std::size_t i = 0; i < args.size(); ++i){
+               
                 write(args[i].name);
+               
+
                 if(i < args.size() - 1){
                     write(", ");
                 }
@@ -278,6 +281,11 @@ private:
 
 
     }
+
+    static bool isInterface(MethodArg arg) {
+        return std::dynamic_pointer_cast<InterfaceType>(arg.type->type) != nullptr;
+    }
+
 
     void writeInterfaceWrapperArgMarshaler(const MethodArg& arg, bool methodResult) {
         std::string varName = methodResult ? "result" : arg.name;
@@ -312,46 +320,68 @@ private:
 
             //declare result variable
             if(method.returnsValue()){
-                if(method.returnType.array){
+                if (isInterface(method.returnType)) {
+                    write("LFramework::ComPtr<").write(fullName(method.returnType.type)).write(">").writeLine(" result;");
+                }else if(method.returnType.array){
                     write("std::vector<").write(fullName(method.returnType.type)).write(">").writeLine(" result;");
                 }else{
                     write(fullName(method.returnType.type)).writeLine(" result;");
                 }
 
                 //marshal result
-                if(CppMarshaler::shouldMarshal(method.returnType)){
+               /* if (CppMarshaler::shouldMarshal(method.returnType)) {
                     writeInterfaceWrapperArgMarshaler(method.returnType, true);
-                }
+                }*/
             }
 
             //marshal args
-            for(std::size_t i = 0; i < method.args.size(); ++i){
+            for (std::size_t i = 0; i < method.args.size(); ++i) {
                 if(CppMarshaler::shouldMarshal(method.args[i])){
                     writeInterfaceWrapperArgMarshaler(method.args[i], false);
                 }
             }
 
-
+            if (method.name == "getNodes") {
+                std::cout << "FOUND" << std::endl;
+            }
 
             write("auto comCallResult = _abi->").write(method.name).write("(");
             for(std::size_t i = 0; i < method.args.size(); ++i){
-                if(CppMarshaler::shouldMarshal(method.args[i])){
+                if (CppMarshaler::shouldMarshal(method.args[i])) {
                     write(CppMarshaler::getVariableName(method.args[i].name));
-                }else{
+                }else {
                     write(method.args[i].name);
                 }
 
-                if(i < method.args.size() - 1){
+                if (isInterface(method.args[i]) && !method.args[i].reference) {
+                    write(".detach()");
+                }
+
+                if (i < method.args.size() - 1) {
                     write(", ");
                 }
+                
+                    
+              
             }
 
             if(method.returnsValue()){
-                 if(CppMarshaler::shouldMarshal(method.returnType)){
-                     write(", ").write(CppMarshaler::getVariableName("result"));
-                 }else{
-                     write(", result");
-                 }
+                if (!method.args.empty()) {
+                    write(", ");
+                }
+               
+
+                if(CppMarshaler::shouldMarshal(method.returnType)){
+                    if (isInterface(method.returnType) && !method.returnType.reference) {
+                        write("result.detach()");
+                    }
+                    else {
+                        write("result");
+                    }
+                  
+                }else{
+                    write("result");
+                }
 
             }
 
@@ -436,33 +466,46 @@ private:
         writeLine(" = 0;");
     }
 
+ 
     void writeWrapperArg(MethodArg arg, bool returnType = false) {
         auto attrs = AttributeList::parse(arg.attributes);
         auto constAttr = attrs.getAttribute<ConstAttribute>();
         auto outAttr = attrs.getAttribute<OutAttribute>();
 
-        if(arg.array){
-            if(outAttr != nullptr){
-                write("std::vector<").write(fullName(arg.type)).write(">");
-            }else{
-                write("const std::vector<").write(fullName(arg.type)).write(">");
-            }
-            if(!returnType){
-                write("&");
-            }
-        }else{
-            if(constAttr != nullptr){
-                write("const ");
-            }
-            write(fullName(arg.type->type));
-            if(arg.reference){
-                if(arg.type->type->name == "void"){
-                    write("*");
-                }else{
+        auto isInterfaceArg = isInterface(arg);
+
+        if (isInterfaceArg) {
+            write("LFramework::ComPtr<").write(fullName(arg.type)).write(">");
+        }
+        else {
+
+            if (arg.array) {
+                if (outAttr != nullptr) {
+                    write("std::vector<").write(fullName(arg.type)).write(">");
+                }
+                else {
+                    write("const std::vector<").write(fullName(arg.type)).write(">");
+                }
+                if (!returnType) {
                     write("&");
                 }
             }
+            else {
+                if (constAttr != nullptr) {
+                    write("const ");
+                }
+                write(fullName(arg.type->type));
+                if (arg.reference) {
+                    if (arg.type->type->name == "void") {
+                        write("*");
+                    }
+                    else {
+                        write("&");
+                    }
+                }
+            }
         }
+
 
        
         if (!returnType) {
@@ -476,21 +519,40 @@ private:
         auto attrs = AttributeList::parse(arg.attributes);
         auto constAttr = attrs.getAttribute<ConstAttribute>();
 
-        if(CppMarshaler::shouldMarshal(arg)){
-            write(CppMarshaler::getMarshalerType(arg));
-        }else{
-            if(constAttr != nullptr){
-                write("const ");
+        bool isInterfaceArg = isInterface(arg);
+        if (isInterfaceArg) {
+            if (arg.reference) {
+                write("LFramework::ComPtr<");
+                write(fullName(arg.type->type));
+                write(">&");
             }
-            write(fullName(arg.type->type));
-            if(arg.reference){
-                if(arg.type->type->name == "void"){
-                    write("*");
-                }else{
-                    write("&");
+            else {
+                write("LFramework::InterfaceAbi<");
+                write(fullName(arg.type->type));
+                write(">*");
+            }
+           // 
+        }
+        else {
+            if (CppMarshaler::shouldMarshal(arg)) {
+                write(CppMarshaler::getMarshalerType(arg));
+            }
+            else {
+                if (constAttr != nullptr) {
+                    write("const ");
+                }
+                write(fullName(arg.type->type));
+                if (arg.reference) {
+                    if (arg.type->type->name == "void") {
+                        write("*");
+                    }
+                    else {
+                        write("&");
+                    }
                 }
             }
         }
+      
 
         write(" ");
         write(arg.name);
