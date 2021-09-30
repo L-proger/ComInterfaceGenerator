@@ -295,7 +295,7 @@ private:
     void writeInterfaceWrapper(std::shared_ptr<InterfaceType> type) {
         comment("Interface Wrapper").writeLine();
         writeLine("template<>");
-        write("class LFramework::InterfaceWrapper<").write(fullName(type)).write(">");
+        write("class InterfaceWrapper<").write(fullName(type)).write(">");
         beginScope("Interface Wrapper");
         unident().write("public:").ident().writeLine();
 
