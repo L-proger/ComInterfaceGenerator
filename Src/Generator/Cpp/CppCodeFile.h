@@ -13,8 +13,11 @@
 #include <Generator/Cpp/CppMarshaler.h>
 
 class CppCodeFile : public CodeFile {
+private:
+    bool _enableExceptions = true;
 public:
-    CppCodeFile() {
+
+    CppCodeFile(bool enableExceptions) : _enableExceptions(enableExceptions) {
 
     }
 
@@ -236,43 +239,94 @@ private:
             writeAbiMethodDeclaration(method);
             beginScope("");
 
-            write("try");
-            beginScope("");
+            auto args = getAbiMethodArgs(method, !_enableExceptions);
 
+           
+            for (std::size_t i = 0; i < args.size(); ++i) {
+                auto arg = args[i];
+                auto attrs = AttributeList::parse(arg.attributes);
+                auto constAttr = attrs.getAttribute<ConstAttribute>();
+                auto outAttr = attrs.getAttribute<OutAttribute>();
 
-            if(method.returnsValue()){
-                write("result = this->implementer()->");
-            }else{
-                write("this->implementer()->");
+                if (CppMarshaler::shouldMarshal(arg) && outAttr) {
+                    if (isInterface(arg)) {
+                        write("LFramework::ComPtr<").write(fullName(arg.type)).write("> ").write(CppMarshaler::getVariableName(arg.name)).writeLine(";");
+                    }
+                    else if (method.returnType.array) {
+                        write("std::vector<").write(fullName(arg.type)).write("> ").write(CppMarshaler::getVariableName(arg.name)).writeLine(";");
+                    }
+                }
             }
 
 
-
+            if (_enableExceptions) {
+                write("try");
+                beginScope("");
+            }
+           
+            if (_enableExceptions) {
+                if (method.returnsValue()) {
+                    write("result = this->implementer()->");
+                }
+                else {
+                    write("this->implementer()->");
+                }
+            }
+            else {
+                write("Result comCallResult_ = this->implementer()->");
+            }
 
             write(method.name);
             write("(");
 
-
-            auto args = getAbiMethodArgs(method, false);
+           
             for(std::size_t i = 0; i < args.size(); ++i){
-               
-                write(args[i].name);
-               
+                auto arg = args[i];
+                auto attrs = AttributeList::parse(arg.attributes);
+                auto constAttr = attrs.getAttribute<ConstAttribute>();
+                auto outAttr = attrs.getAttribute<OutAttribute>();
 
+                if (CppMarshaler::shouldMarshal(arg) && outAttr) {
+                    write(CppMarshaler::getVariableName(arg.name));
+                }
+                else {
+                    write(arg.name);
+                }
+
+              
                 if(i < args.size() - 1){
                     write(", ");
                 }
             }
+
             writeLine(");");
 
+            for (std::size_t i = 0; i < args.size(); ++i) {
+                auto arg = args[i];
+                auto attrs = AttributeList::parse(arg.attributes);
+                auto constAttr = attrs.getAttribute<ConstAttribute>();
+                auto outAttr = attrs.getAttribute<OutAttribute>();
 
-            endScope(); //end try
-            write("catch(...)");
-            beginScope("");
+                if (CppMarshaler::shouldMarshal(arg) && outAttr) {
+                    write(arg.name).write(" = ").write(CppMarshaler::getVariableName(arg.name)).writeLine(";");
+                }
+            }
+
+            if (_enableExceptions) {
+                endScope(); //end try
+                write("catch(...)");
+                beginScope("");
                 writeLine("return LFramework::Result::UnknownFailure;");
-            endScope(); //end catch
+                endScope(); //end catch
 
-            writeLine("return LFramework::Result::Ok;");
+                writeLine("return LFramework::Result::Ok;");
+            }
+            else {
+                writeLine("return comCallResult_;");
+                
+            }
+
+
             endScope();
             //writeLine(" }");
         }
@@ -295,14 +349,23 @@ private:
     void writeInterfaceWrapper(std::shared_ptr<InterfaceType> type) {
         comment("Interface Wrapper").writeLine();
         writeLine("template<>");
-        write("class InterfaceWrapper<").write(fullName(type)).write(">");
+        write("class InterfaceWrapper<").write(fullName(type)).write("> : public InterfaceWrapper<");
+        write(fullName(type->baseInterfaceType));
+        write("> ");
+
         beginScope("Interface Wrapper");
         unident().write("public:").ident().writeLine();
 
         for(auto& method : type->methods){
             //return type
             //
-            writeWrapperArg(method.returnType, true);
+            if (_enableExceptions) {
+                writeWrapperArg(method.returnType, true);
+            }
+            else {
+                write("Result");
+            }
+          
             write(" ").write(method.name).write("(");
             //write(fullName(method.returnType.type)).write(" ").write(method.name).write("(");
 
@@ -313,57 +376,94 @@ private:
                     write(", ");
                 }
             }
+
+            if (!_enableExceptions && method.returnsValue()) {
+                if (!method.args.empty()) {
+                    write(", ");
+                }
+                
+                writeWrapperArg(method.returnType, false);
+            }
+
+
             write(")");
             beginScope(method.name); //Method body
 
             //Call
 
-            //declare result variable
-            if(method.returnsValue()){
-                if (isInterface(method.returnType)) {
-                    write("LFramework::ComPtr<").write(fullName(method.returnType.type)).write(">").writeLine(" result;");
-                }else if(method.returnType.array){
-                    write("std::vector<").write(fullName(method.returnType.type)).write(">").writeLine(" result;");
-                }else{
-                    write(fullName(method.returnType.type)).writeLine(" result;");
-                }
+            if (_enableExceptions) {
 
-                //marshal result
-               /* if (CppMarshaler::shouldMarshal(method.returnType)) {
-                    writeInterfaceWrapperArgMarshaler(method.returnType, true);
-                }*/
+                //declare result variable
+                if (method.returnsValue()) {
+                    if (isInterface(method.returnType)) {
+                        write("LFramework::ComPtr<").write(fullName(method.returnType.type)).write(">").writeLine(" result;");
+                    }
+                    else if (method.returnType.array) {
+                        write("std::vector<").write(fullName(method.returnType.type)).write(">").writeLine(" result;");
+                    }
+                    else {
+                        write(fullName(method.returnType.type)).writeLine(" result;");
+                    }
+
+                    //marshal result
+                   /* if (CppMarshaler::shouldMarshal(method.returnType)) {
+                        writeInterfaceWrapperArgMarshaler(method.returnType, true);
+                    }*/
+                }
             }
+           
+
+
 
             //marshal args
             for (std::size_t i = 0; i < method.args.size(); ++i) {
                 if(CppMarshaler::shouldMarshal(method.args[i])){
-                    writeInterfaceWrapperArgMarshaler(method.args[i], false);
+                    //writeInterfaceWrapperArgMarshaler(method.args[i], false);
                 }
             }
 
             if (method.name == "getNodes") {
                 std::cout << "FOUND" << std::endl;
             }
+            if (_enableExceptions) {
+                write("auto comCallResult = ");
+            }
+            else {
+                write("return ");
+            }
 
-            write("auto comCallResult = _abi->").write(method.name).write("(");
-            for(std::size_t i = 0; i < method.args.size(); ++i){
-                if (CppMarshaler::shouldMarshal(method.args[i])) {
-                    write(CppMarshaler::getVariableName(method.args[i].name));
-                }else {
-                    write(method.args[i].name);
+            write("reinterpret_cast<InterfaceAbi<").write(fullName(type)).write(">*>(_abi)->").write(method.name).write("(");
+
+
+            auto argMarshal = [&](MethodArg& arg) {
+                if (CppMarshaler::shouldMarshal(arg)) {
+                    //write(CppMarshaler::getVariableName(arg.name));
+                    write(arg.name);
+                }
+                else {
+                    write(arg.name);
                 }
 
-                if (isInterface(method.args[i]) && !method.args[i].reference) {
+                if (isInterface(arg) && !arg.reference) {
                     write(".detach()");
                 }
 
+              
+            };
+
+            for(std::size_t i = 0; i < method.args.size(); ++i){
+                argMarshal(method.args[i]);
+                    
                 if (i < method.args.size() - 1) {
                     write(", ");
                 }
-                
-                    
-              
             }
+
+            /*if (!_enableExceptions && method.returnsValue()) {
+                write(", ");
+                argMarshal(method.returnType);
+            }*/
+
 
             if(method.returnsValue()){
                 if (!method.args.empty()) {
@@ -387,22 +487,25 @@ private:
 
             writeLine(");"); //Call end
 
-            write("if(comCallResult != Result::Ok)");
 
-            beginScope("");
-            writeLine("throw ComException(comCallResult);");
-            endScope();
+            if (_enableExceptions) {
+                write("if(comCallResult != Result::Ok)");
+
+                beginScope("");
+                writeLine("throw ComException(comCallResult);");
+                endScope();
 
 
-            if(method.returnsValue()){
-                writeLine("return result;");
+                if (method.returnsValue()) {
+                    writeLine("return result;");
+                }
             }
 
             endScope(); //End method body
         }
 
-        unident().write("private:").ident().writeLine();
-        write("InterfaceAbi<").write(fullName(type)).writeLine(">* _abi;");
+       // unident().write("private:").ident().writeLine();
+       // write("InterfaceAbi<").write(fullName(type)).writeLine(">* _abi;");
 
         endScope(";");
     }

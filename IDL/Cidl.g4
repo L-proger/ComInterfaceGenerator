@@ -158,6 +158,7 @@ primitive
     | 'IUnknown'
     | 'string'
 	| 'Guid'
+    | 'bool'
     ;
 
 integer_primitive 

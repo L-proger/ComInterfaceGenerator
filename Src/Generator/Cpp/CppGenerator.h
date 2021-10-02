@@ -6,6 +6,7 @@
 
 class CppGenerator : public Generator {
 public:
+    bool enableExceptions = true;
     CppGenerator() : Generator(){
         auto primitiveModule = TypeCache::findModule(TypeCache::primitiveModuleName());
 
@@ -25,6 +26,7 @@ public:
         TypeCache::replaceType(primitiveModule->findType("void"), languagePrimitiveModule->addNewType("void"));
         TypeCache::replaceType(primitiveModule->findType("float"), languagePrimitiveModule->addNewType("float"));
         TypeCache::replaceType(primitiveModule->findType("double"), languagePrimitiveModule->addNewType("double"));
+        TypeCache::replaceType(primitiveModule->findType("bool"), languagePrimitiveModule->addNewType("bool"));
 
 
         auto stringModule = TypeCache::addModule<ExternalModule>("string");
@@ -39,6 +41,6 @@ public:
     }
 
     std::shared_ptr<CodeFile> createCodeFile() override {
-        return std::make_shared<CppCodeFile>();
+        return std::make_shared<CppCodeFile>(enableExceptions);
     }
 };

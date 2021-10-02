@@ -14,7 +14,7 @@ enum class OutputLanguage {
 };
 
 template<>
-class CommandLine::ValueConverter<OutputLanguage, false> {
+class CommandLine::ValueConverter<OutputLanguage> {
 public:
     static OutputLanguage convert(const std::string& value) {
         if(value == "cpp" || value == "Cpp" || value == "CPP"){
@@ -27,7 +27,7 @@ public:
     }
 };
 
-void run(OutputLanguage language, const std::string& outputDir, const std::vector<std::string>& inputDirs, const std::vector<std::string>& modules) {
+void run(OutputLanguage language, const std::string& outputDir, const std::vector<std::string>& inputDirs, const std::vector<std::string>& modules, std::optional<bool> enableExceptions) {
     if(modules.empty()){
         throw std::runtime_error("No input files");
     }
@@ -45,6 +45,10 @@ void run(OutputLanguage language, const std::string& outputDir, const std::vecto
 
     if(language == OutputLanguage::Cpp){
         CppGenerator generator;
+        if (enableExceptions.has_value()) {
+            generator.enableExceptions = enableExceptions.value();
+        }
+      
         generator.generate(outputDir);
     }else{
         throw std::runtime_error("Target language not supported");
@@ -54,6 +58,7 @@ void run(OutputLanguage language, const std::string& outputDir, const std::vecto
 int main(int argc, const char* const* argv) {
     try{
         auto version = CommandLine::OptionDescription("--version", "Print version", CommandLine::OptionType::NoValue).alias("-v");
+        auto exceptions = CommandLine::OptionDescription("--exceptions", "Enable exceptions handling in generated files", CommandLine::OptionType::SingleValue).alias("-e");
         auto language = CommandLine::OptionDescription("--language", "Output files language", CommandLine::OptionType::SingleValue).alias("-l");
         auto outputDir = CommandLine::OptionDescription("--output", "Output files directory", CommandLine::OptionType::SingleValue).alias("-o");
         auto inputDirs = CommandLine::OptionDescription("--input",  "Input files directory", CommandLine::OptionType::MultipleValues).alias("-I");
@@ -75,9 +80,10 @@ int main(int argc, const char* const* argv) {
             auto& languageOpt = cmd.option(language);
             auto& outputDirOpt = cmd.option(outputDir);
             auto& inputDirsOpt = cmd.option(inputDirs);
+            auto& exceptionsOpt = cmd.option(exceptions);
             auto& inputModulesArg = cmd.argument(inputModules);
             cmd.handler([&]() {
-                run(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), inputDirsOpt.values(), inputModulesArg.values());
+                run(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), inputDirsOpt.values(), inputModulesArg.values(), exceptionsOpt.valueOptional<bool>());
             });
         });
 
