@@ -1,3 +1,6 @@
 [submodule "Dependencies/CommandLine"]
 	path = Dependencies/CommandLine
 	url = https://github.com/L-proger/CommandLine.git
+[submodule "Dependencies/libComInterfaceGenerator"]
+	path = Dependencies/libComInterfaceGenerator
+	url = https://github.com/L-proger/libComInterfaceGenerator.git
