@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <Generator/CSharp/CSharpGenerator.h>
 #include <Generator/Cpp/CppGenerator.h>
+#include <Generator/Cpp/CppTaskCodeFile.h>
 #include <iostream>
 #include <Generator/Guid.h>
 #include <Generator/Attribute/AttributeUtils.h>
@@ -27,7 +28,8 @@ public:
     }
 };
 
-void run(OutputLanguage language, const std::string& outputDir, const std::vector<std::string>& inputDirs, const std::vector<std::string>& modules, std::optional<bool> enableExceptions) {
+
+void init(const std::vector<std::string>& modules, const std::vector<std::string>& inputDirs) {
     if(modules.empty()){
         throw std::runtime_error("No input files");
     }
@@ -40,7 +42,9 @@ void run(OutputLanguage language, const std::string& outputDir, const std::vecto
     for(auto& module : modules){
         TypeCache::parseModule(module);
     }
+}
 
+void run(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions) {
     auto m = TypeCache::getModules();
 
     if(language == OutputLanguage::Cpp){
@@ -55,8 +59,42 @@ void run(OutputLanguage language, const std::string& outputDir, const std::vecto
     }
 }
 
+void generateTask(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions, const std::vector<std::string>& modules) {
+    auto m = TypeCache::getModules();
+
+    if(language == OutputLanguage::Cpp){
+        CppGenerator generator;
+        if (enableExceptions.has_value()) {
+            generator.enableExceptions = enableExceptions.value();
+        }
+      
+
+        std::filesystem::create_directories(outputDir);
+
+        //generate outputs
+        for(auto& moduleName : modules){
+
+            auto moduleIt = std::find_if( generator.getWritableModules().begin(),  generator.getWritableModules().end(), [moduleName](std::shared_ptr<Module> m){
+                return m->name == moduleName;
+            });
+           
+            if(moduleIt != generator.getWritableModules().end()){
+                auto codeFile = std::make_shared<CppTaskCodeFile>(generator.enableExceptions);
+                codeFile->writeModule(*moduleIt, false);
+                generator.saveCodeFile(outputDir, (*moduleIt)->name, codeFile);
+            }else{
+                throw std::runtime_error("Strange error");
+            }
+        }
+        //generator.generate(outputDir);
+    }else{
+        throw std::runtime_error("Target language not supported");
+    }
+}
+
 int main(int argc, const char* const* argv) {
     try{
+        auto target = CommandLine::OptionDescription("--target", "How should consume interfaces host/device", CommandLine::OptionType::SingleValue).alias("-t");
         auto version = CommandLine::OptionDescription("--version", "Print version", CommandLine::OptionType::NoValue).alias("-v");
         auto exceptions = CommandLine::OptionDescription("--exceptions", "Enable exceptions handling in generated files", CommandLine::OptionType::SingleValue).alias("-e");
         auto language = CommandLine::OptionDescription("--language", "Output files language", CommandLine::OptionType::SingleValue).alias("-l");
@@ -83,7 +121,24 @@ int main(int argc, const char* const* argv) {
             auto& exceptionsOpt = cmd.option(exceptions);
             auto& inputModulesArg = cmd.argument(inputModules);
             cmd.handler([&]() {
-                run(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), inputDirsOpt.values(), inputModulesArg.values(), exceptionsOpt.valueOptional<bool>());
+
+                init(inputModulesArg.values(), inputDirsOpt.values());
+                run(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>());
+            });
+        });
+
+        app.command("generateTask", "Generate interface files", [&](CommandLine::Command& cmd) {
+            cmd.addHelpOption();
+            auto& targetOpt = cmd.option(target);
+            auto& languageOpt = cmd.option(language);
+            auto& outputDirOpt = cmd.option(outputDir);
+            auto& inputDirsOpt = cmd.option(inputDirs);
+            auto& exceptionsOpt = cmd.option(exceptions);
+            auto& inputModulesArg = cmd.argument(inputModules);
+ 
+            cmd.handler([&]() {
+                init(inputModulesArg.values(), inputDirsOpt.values());
+                generateTask(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>(), inputModulesArg.values());
             });
         });
 
