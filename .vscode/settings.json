@@ -44,6 +44,26 @@
         "type_traits": "cpp",
         "tuple": "cpp",
         "typeinfo": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "optional": "cpp",
+        "codecvt": "cpp",
+        "cstdarg": "cpp",
+        "algorithm": "cpp",
+        "any": "cpp",
+        "filesystem": "cpp",
+        "iterator": "cpp",
+        "map": "cpp",
+        "memory_resource": "cpp",
+        "numeric": "cpp",
+        "random": "cpp",
+        "set": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "bit": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
     }
 }

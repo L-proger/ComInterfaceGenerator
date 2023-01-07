@@ -31,7 +31,7 @@ public:
 
 void init(const std::vector<std::string>& modules, const std::vector<std::string>& inputDirs) {
     if(modules.empty()){
-        throw std::runtime_error("No input files");
+        //throw std::runtime_error("No input files");
     }
 
     TypeCache::init();
@@ -59,34 +59,28 @@ void run(OutputLanguage language, const std::string& outputDir, std::optional<bo
     }
 }
 
-void generateTask(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions, const std::vector<std::string>& modules) {
+void generateInterfaceSerializer(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions, const std::string& interfaceName, const std::string& direction) {
     auto m = TypeCache::getModules();
+    auto splitPos = interfaceName.find_last_of('.');
+    auto moduleName = interfaceName.substr(0, splitPos);
+    std::filesystem::create_directories(outputDir);
+
+    TypeCache::parseModule(moduleName);
 
     if(language == OutputLanguage::Cpp){
         CppGenerator generator;
         if (enableExceptions.has_value()) {
             generator.enableExceptions = enableExceptions.value();
         }
-      
+        
+        auto moduleIt = std::find_if(generator.getWritableModules().begin(), generator.getWritableModules().end(), [moduleName](std::shared_ptr<Module> m){
+            return m->name == moduleName;
+        });
 
-        std::filesystem::create_directories(outputDir);
+        auto codeFile = std::make_shared<CppTaskCodeFile>(generator.enableExceptions, interfaceName, direction == "out" ? true : false);
+        codeFile->writeSerializer(*moduleIt);
+        generator.saveCodeFile(outputDir, (*moduleIt)->name, codeFile);
 
-        //generate outputs
-        for(auto& moduleName : modules){
-
-            auto moduleIt = std::find_if( generator.getWritableModules().begin(),  generator.getWritableModules().end(), [moduleName](std::shared_ptr<Module> m){
-                return m->name == moduleName;
-            });
-           
-            if(moduleIt != generator.getWritableModules().end()){
-                auto codeFile = std::make_shared<CppTaskCodeFile>(generator.enableExceptions);
-                codeFile->writeModule(*moduleIt, false);
-                generator.saveCodeFile(outputDir, (*moduleIt)->name, codeFile);
-            }else{
-                throw std::runtime_error("Strange error");
-            }
-        }
-        //generator.generate(outputDir);
     }else{
         throw std::runtime_error("Target language not supported");
     }
@@ -94,13 +88,15 @@ void generateTask(OutputLanguage language, const std::string& outputDir, std::op
 
 int main(int argc, const char* const* argv) {
     try{
-        auto target = CommandLine::OptionDescription("--target", "How should consume interfaces host/device", CommandLine::OptionType::SingleValue).alias("-t");
+        auto serializerDirection = CommandLine::OptionDescription("--direction", "Serialization direction [out/in]", CommandLine::OptionType::SingleValue).alias("-d");
         auto version = CommandLine::OptionDescription("--version", "Print version", CommandLine::OptionType::NoValue).alias("-v");
         auto exceptions = CommandLine::OptionDescription("--exceptions", "Enable exceptions handling in generated files", CommandLine::OptionType::SingleValue).alias("-e");
         auto language = CommandLine::OptionDescription("--language", "Output files language", CommandLine::OptionType::SingleValue).alias("-l");
         auto outputDir = CommandLine::OptionDescription("--output", "Output files directory", CommandLine::OptionType::SingleValue).alias("-o");
         auto inputDirs = CommandLine::OptionDescription("--input",  "Input files directory", CommandLine::OptionType::MultipleValues).alias("-I");
-        CommandLine::ArgumentDescription inputModules("Module names",  "Modulae names to generate", CommandLine::ArgumentType::MultipleValues);
+        CommandLine::ArgumentDescription inputModules("Module names",  "Module names to generate", CommandLine::ArgumentType::MultipleValues);
+
+        CommandLine::ArgumentDescription inputInterface("Full interface name",  "Full interface name", CommandLine::ArgumentType::SingleValue);
 
         CommandLine::Command app("ComInterfaceGenerator", "Generate COM interfaces from .cidl files", [&](CommandLine::Command& cmd) {
             cmd.addHelpOption();
@@ -127,18 +123,18 @@ int main(int argc, const char* const* argv) {
             });
         });
 
-        app.command("generateTask", "Generate interface files", [&](CommandLine::Command& cmd) {
+        app.command("generateInterfaceSerializer", "Generate interface data serializer", [&](CommandLine::Command& cmd) {
             cmd.addHelpOption();
-            auto& targetOpt = cmd.option(target);
+            auto& serializerDirectionOpt = cmd.option(serializerDirection);
             auto& languageOpt = cmd.option(language);
             auto& outputDirOpt = cmd.option(outputDir);
             auto& inputDirsOpt = cmd.option(inputDirs);
             auto& exceptionsOpt = cmd.option(exceptions);
-            auto& inputModulesArg = cmd.argument(inputModules);
+            auto& inputInterfaceArg = cmd.argument(inputInterface);
  
             cmd.handler([&]() {
-                init(inputModulesArg.values(), inputDirsOpt.values());
-                generateTask(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>(), inputModulesArg.values());
+                init({}, inputDirsOpt.values());
+                generateInterfaceSerializer(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>(), inputInterfaceArg.value(), serializerDirectionOpt.value());
             });
         });
 
