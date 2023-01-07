@@ -32,7 +32,7 @@
                  "-I", "${workspaceFolder}/../Dependencies/MicroNetworkCommon/Api", 
                  "-o", "${workspaceFolder}/../Interfaces", 
                  "-l", "Cpp", 
-                 "MicroNetwork.Common",  "MicroNetwork.Host", "MicroNetwork.Task.MemoryAccess"],
+                 "MicroNetwork.Common",  "MicroNetwork.Host", "MicroNetwork.Task.MemoryAccess", "MicroNetwork.Host.MemoryAccess"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
