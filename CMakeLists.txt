@@ -2,6 +2,14 @@ cmake_minimum_required (VERSION 3.15.0)
 
 project(ComInterfaceGeneratorProj LANGUAGES CXX)
 
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+	add_link_options(-static-libgcc)
+	add_link_options(-static-libstdc++)
+endif()
+
+set(ANTLR_BUILD_CPP_TESTS OFF)
+
 add_executable(ComInterfaceGenerator)
 
 set_property(TARGET ComInterfaceGenerator PROPERTY
