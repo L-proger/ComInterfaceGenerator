@@ -2,7 +2,8 @@
 #include <filesystem>
 #include <Generator/CSharp/CSharpGenerator.h>
 #include <Generator/Cpp/CppGenerator.h>
-#include <Generator/Cpp/CppTaskCodeFile.h>
+#include <Generator/Cpp/CppInterfaceSerializerCodeFile.h>
+#include <Generator/Cpp/CppIoStreamDescriptorCodeFile.h>
 #include <iostream>
 #include <Generator/Guid.h>
 #include <Generator/Attribute/AttributeUtils.h>
@@ -77,7 +78,7 @@ void generateInterfaceSerializer(OutputLanguage language, const std::string& out
             return m->name == moduleName;
         });
 
-        auto codeFile = std::make_shared<CppTaskCodeFile>(generator.enableExceptions, interfaceName, direction == "out" ? true : false);
+        auto codeFile = std::make_shared<CppInterfaceSerializerCodeFile>(generator.enableExceptions, interfaceName, direction == "out" ? true : false);
         codeFile->writeSerializer(*moduleIt);
         generator.saveCodeFile(outputDir, (*moduleIt)->name, codeFile);
 
@@ -85,7 +86,32 @@ void generateInterfaceSerializer(OutputLanguage language, const std::string& out
         throw std::runtime_error("Target language not supported");
     }
 }
+void generateIoStreamDescriptor(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions, const std::string& interfaceName, bool invert) {
+    auto m = TypeCache::getModules();
+    auto splitPos = interfaceName.find_last_of('.');
+    auto moduleName = interfaceName.substr(0, splitPos);
+    std::filesystem::create_directories(outputDir);
 
+    TypeCache::parseModule(moduleName);
+
+    if(language == OutputLanguage::Cpp){
+        CppGenerator generator;
+        if (enableExceptions.has_value()) {
+            generator.enableExceptions = enableExceptions.value();
+        }
+        
+        auto moduleIt = std::find_if(generator.getWritableModules().begin(), generator.getWritableModules().end(), [moduleName](std::shared_ptr<Module> m){
+            return m->name == moduleName;
+        });
+
+        auto codeFile = std::make_shared<CppIoStreamDescriptorCodeFile>(generator.enableExceptions, interfaceName, invert);
+        codeFile->writeSerializer(*moduleIt);
+        generator.saveCodeFile(outputDir, (*moduleIt)->name, codeFile);
+
+    }else{
+        throw std::runtime_error("Target language not supported");
+    }
+}
 int main(int argc, const char* const* argv) {
     try{
         auto serializerDirection = CommandLine::OptionDescription("--direction", "Serialization direction [out/in]", CommandLine::OptionType::SingleValue).alias("-d");
@@ -94,6 +120,8 @@ int main(int argc, const char* const* argv) {
         auto language = CommandLine::OptionDescription("--language", "Output files language", CommandLine::OptionType::SingleValue).alias("-l");
         auto outputDir = CommandLine::OptionDescription("--output", "Output files directory", CommandLine::OptionType::SingleValue).alias("-o");
         auto inputDirs = CommandLine::OptionDescription("--input",  "Input files directory", CommandLine::OptionType::MultipleValues).alias("-I");
+        auto invertStream = CommandLine::OptionDescription("--invert",  "Invert stream direction", CommandLine::OptionType::NoValue).alias("-i");
+
         CommandLine::ArgumentDescription inputModules("Module names",  "Module names to generate", CommandLine::ArgumentType::MultipleValues);
 
         CommandLine::ArgumentDescription inputInterface("Full interface name",  "Full interface name", CommandLine::ArgumentType::SingleValue);
@@ -135,6 +163,21 @@ int main(int argc, const char* const* argv) {
             cmd.handler([&]() {
                 init({}, inputDirsOpt.values());
                 generateInterfaceSerializer(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>(), inputInterfaceArg.value(), serializerDirectionOpt.value());
+            });
+        });
+
+        app.command("generateIoStreamDescriptor", "Generate IO serialization stream descriptor", [&](CommandLine::Command& cmd) {
+            cmd.addHelpOption();
+            auto& invertStreamOpt = cmd.option(invertStream);
+            auto& languageOpt = cmd.option(language);
+            auto& outputDirOpt = cmd.option(outputDir);
+            auto& inputDirsOpt = cmd.option(inputDirs);
+            auto& exceptionsOpt = cmd.option(exceptions);
+            auto& inputInterfaceArg = cmd.argument(inputInterface);
+ 
+            cmd.handler([&]() {
+                init({}, inputDirsOpt.values());
+                generateIoStreamDescriptor(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>(), inputInterfaceArg.value(), invertStreamOpt.isSet());
             });
         });
 

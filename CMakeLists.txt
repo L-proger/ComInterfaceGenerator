@@ -21,3 +21,28 @@ add_subdirectory(Src)
 
 target_link_libraries(ComInterfaceGenerator PRIVATE CommandLine)
 target_link_libraries(ComInterfaceGenerator PRIVATE libComInterfaceGenerator)
+
+
+function(ComInterfaceGeneratorMakeArgs)
+    set(oneValueArgs RESULT_VAR)
+    set(multiValueArgs OUTMODULES)
+    cmake_parse_arguments(MakeGeneratorArgs "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+    set(RESULT "")
+
+    if(ApiEnableExceptions)
+        list(PREPEND RESULT -e true)
+    else()
+        list(PREPEND RESULT -e false)
+    endif()
+
+    list(PREPEND RESULT -l ${ApiOutputLanguage})
+
+    foreach(INC ${ApiIncludeDirs})
+        list(APPEND RESULT -I ${INC})
+    endforeach()
+    
+    list(APPEND RESULT -o ${ApiOutputDir})
+    list(APPEND RESULT ${MakeGeneratorArgs_OUTMODULES})
+    set(${MakeGeneratorArgs_RESULT_VAR} ${RESULT} PARENT_SCOPE)
+endfunction()
