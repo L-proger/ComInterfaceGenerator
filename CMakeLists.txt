@@ -46,3 +46,27 @@ function(ComInterfaceGeneratorMakeArgs)
     list(APPEND RESULT ${MakeGeneratorArgs_OUTMODULES})
     set(${MakeGeneratorArgs_RESULT_VAR} ${RESULT} PARENT_SCOPE)
 endfunction()
+
+
+function(ComInterfaceGeneratorBaseArgs)
+    set(oneValueArgs RESULT_VAR)
+    cmake_parse_arguments(MakeGeneratorArgs2 "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
+
+    set(RESULT "")
+
+    if(ApiEnableExceptions)
+        list(PREPEND RESULT -e true)
+    else()
+        list(PREPEND RESULT -e false)
+    endif()
+
+    list(PREPEND RESULT -l ${ApiOutputLanguage})
+
+    foreach(INC ${ApiIncludeDirs})
+        list(APPEND RESULT -I ${INC})
+    endforeach()
+    
+    list(APPEND RESULT -o ${ApiOutputDir})
+
+    set(${MakeGeneratorArgs2_RESULT_VAR} ${RESULT} PARENT_SCOPE)
+endfunction()
