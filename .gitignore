@@ -7,3 +7,6 @@
 /out
 /build
 /dist
+/Actions/.vs
+/Actions/bin
+/Actions/obj
