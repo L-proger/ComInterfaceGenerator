@@ -5,3 +5,6 @@
 /GeneratedApi
 /.vs
 /out
+/Actions/bin
+/Actions/obj
+/Actions/.vs

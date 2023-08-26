@@ -4,3 +4,6 @@
 [submodule "Dependencies/libComInterfaceGenerator"]
 	path = Dependencies/libComInterfaceGenerator
 	url = https://github.com/L-proger/libComInterfaceGenerator.git
+[submodule "Dependencies/Actions.Library"]
+	path = Dependencies/Actions.Library
+	url = https://github.com/L-proger/Actions.Library.git
