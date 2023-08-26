@@ -39,7 +39,7 @@ public static class Application {
 
 
         var srcFile = Path.Combine(buildDir, "bin", "ComInterfaceGenerator.exe");
-        File.Copy(srcFile, Path.Combine(artifactsOutputDirectory, "ComInterfaceGenerator.exe");
+        File.Copy(srcFile, Path.Combine(artifactsOutputDirectory, "ComInterfaceGenerator.exe"));
 
 
         return 0;
