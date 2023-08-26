@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <Generator/CSharp/CSharpGenerator.h>
 #include <Generator/Cpp/CppGenerator.h>
+#include <Generator/Cpp/CppInterfaceSerializerCodeFile.h>
+#include <Generator/Cpp/CppIoStreamDescriptorCodeFile.h>
 #include <iostream>
 #include <Generator/Guid.h>
 #include <Generator/Attribute/AttributeUtils.h>
@@ -27,9 +29,10 @@ public:
     }
 };
 
-void run(OutputLanguage language, const std::string& outputDir, const std::vector<std::string>& inputDirs, const std::vector<std::string>& modules, std::optional<bool> enableExceptions) {
+
+void init(const std::vector<std::string>& modules, const std::vector<std::string>& inputDirs) {
     if(modules.empty()){
-        throw std::runtime_error("No input files");
+        //throw std::runtime_error("No input files");
     }
 
     TypeCache::init();
@@ -40,7 +43,9 @@ void run(OutputLanguage language, const std::string& outputDir, const std::vecto
     for(auto& module : modules){
         TypeCache::parseModule(module);
     }
+}
 
+void run(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions) {
     auto m = TypeCache::getModules();
 
     if(language == OutputLanguage::Cpp){
@@ -55,14 +60,71 @@ void run(OutputLanguage language, const std::string& outputDir, const std::vecto
     }
 }
 
+void generateInterfaceSerializer(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions, const std::string& interfaceName, const std::string& direction) {
+    auto m = TypeCache::getModules();
+    auto splitPos = interfaceName.find_last_of('.');
+    auto moduleName = interfaceName.substr(0, splitPos);
+    std::filesystem::create_directories(outputDir);
+
+    TypeCache::parseModule(moduleName);
+
+    if(language == OutputLanguage::Cpp){
+        CppGenerator generator;
+        if (enableExceptions.has_value()) {
+            generator.enableExceptions = enableExceptions.value();
+        }
+        
+        auto moduleIt = std::find_if(generator.getWritableModules().begin(), generator.getWritableModules().end(), [moduleName](std::shared_ptr<Module> m){
+            return m->name == moduleName;
+        });
+
+        auto codeFile = std::make_shared<CppInterfaceSerializerCodeFile>(generator.enableExceptions, interfaceName, direction == "out" ? true : false);
+        codeFile->writeSerializer(*moduleIt);
+        generator.saveCodeFile(outputDir, (*moduleIt)->name, codeFile);
+
+    }else{
+        throw std::runtime_error("Target language not supported");
+    }
+}
+void generateIoStreamDescriptor(OutputLanguage language, const std::string& outputDir, std::optional<bool> enableExceptions, const std::string& interfaceName, bool invert) {
+    auto m = TypeCache::getModules();
+    auto splitPos = interfaceName.find_last_of('.');
+    auto moduleName = interfaceName.substr(0, splitPos);
+    std::filesystem::create_directories(outputDir);
+
+    TypeCache::parseModule(moduleName);
+
+    if(language == OutputLanguage::Cpp){
+        CppGenerator generator;
+        if (enableExceptions.has_value()) {
+            generator.enableExceptions = enableExceptions.value();
+        }
+        
+        auto moduleIt = std::find_if(generator.getWritableModules().begin(), generator.getWritableModules().end(), [moduleName](std::shared_ptr<Module> m){
+            return m->name == moduleName;
+        });
+
+        auto codeFile = std::make_shared<CppIoStreamDescriptorCodeFile>(generator.enableExceptions, interfaceName, invert);
+        codeFile->writeSerializer(*moduleIt);
+        generator.saveCodeFile(outputDir, (*moduleIt)->name, codeFile);
+
+    }else{
+        throw std::runtime_error("Target language not supported");
+    }
+}
 int main(int argc, const char* const* argv) {
     try{
+        auto serializerDirection = CommandLine::OptionDescription("--direction", "Serialization direction [out/in]", CommandLine::OptionType::SingleValue).alias("-d");
         auto version = CommandLine::OptionDescription("--version", "Print version", CommandLine::OptionType::NoValue).alias("-v");
         auto exceptions = CommandLine::OptionDescription("--exceptions", "Enable exceptions handling in generated files", CommandLine::OptionType::SingleValue).alias("-e");
         auto language = CommandLine::OptionDescription("--language", "Output files language", CommandLine::OptionType::SingleValue).alias("-l");
         auto outputDir = CommandLine::OptionDescription("--output", "Output files directory", CommandLine::OptionType::SingleValue).alias("-o");
         auto inputDirs = CommandLine::OptionDescription("--input",  "Input files directory", CommandLine::OptionType::MultipleValues).alias("-I");
-        CommandLine::ArgumentDescription inputModules("Module names",  "Modulae names to generate", CommandLine::ArgumentType::MultipleValues);
+        auto invertStream = CommandLine::OptionDescription("--invert",  "Invert stream direction", CommandLine::OptionType::NoValue).alias("-i");
+
+        CommandLine::ArgumentDescription inputModules("Module names",  "Module names to generate", CommandLine::ArgumentType::MultipleValues);
+
+        CommandLine::ArgumentDescription inputInterface("Full interface name",  "Full interface name", CommandLine::ArgumentType::SingleValue);
 
         CommandLine::Command app("ComInterfaceGenerator", "Generate COM interfaces from .cidl files", [&](CommandLine::Command& cmd) {
             cmd.addHelpOption();
@@ -83,7 +145,39 @@ int main(int argc, const char* const* argv) {
             auto& exceptionsOpt = cmd.option(exceptions);
             auto& inputModulesArg = cmd.argument(inputModules);
             cmd.handler([&]() {
-                run(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), inputDirsOpt.values(), inputModulesArg.values(), exceptionsOpt.valueOptional<bool>());
+
+                init(inputModulesArg.values(), inputDirsOpt.values());
+                run(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>());
+            });
+        });
+
+        app.command("generateInterfaceSerializer", "Generate interface data serializer", [&](CommandLine::Command& cmd) {
+            cmd.addHelpOption();
+            auto& serializerDirectionOpt = cmd.option(serializerDirection);
+            auto& languageOpt = cmd.option(language);
+            auto& outputDirOpt = cmd.option(outputDir);
+            auto& inputDirsOpt = cmd.option(inputDirs);
+            auto& exceptionsOpt = cmd.option(exceptions);
+            auto& inputInterfaceArg = cmd.argument(inputInterface);
+ 
+            cmd.handler([&]() {
+                init({}, inputDirsOpt.values());
+                generateInterfaceSerializer(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>(), inputInterfaceArg.value(), serializerDirectionOpt.value());
+            });
+        });
+
+        app.command("generateIoStreamDescriptor", "Generate IO serialization stream descriptor", [&](CommandLine::Command& cmd) {
+            cmd.addHelpOption();
+            auto& invertStreamOpt = cmd.option(invertStream);
+            auto& languageOpt = cmd.option(language);
+            auto& outputDirOpt = cmd.option(outputDir);
+            auto& inputDirsOpt = cmd.option(inputDirs);
+            auto& exceptionsOpt = cmd.option(exceptions);
+            auto& inputInterfaceArg = cmd.argument(inputInterface);
+ 
+            cmd.handler([&]() {
+                init({}, inputDirsOpt.values());
+                generateIoStreamDescriptor(languageOpt.value<OutputLanguage>(), outputDirOpt.value(), exceptionsOpt.valueOptional<bool>(), inputInterfaceArg.value(), invertStreamOpt.isSet());
             });
         });
 
